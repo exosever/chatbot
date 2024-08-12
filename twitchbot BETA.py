@@ -79,16 +79,38 @@ feedback_memory = {}
 
 
 def update_parameters_based_on_feedback():
+    global generation_config
+
     for user_id, feedback in feedback_memory.items():
-        if feedback['positive'] / (feedback['positive'] + feedback['negative']) > 0.8:
-            # Increase response temperature for more creative responses
+        # Calculate the feedback ratio
+        feedback_ratio = feedback['positive'] / (feedback['positive'] + feedback['negative'] + 1)  # Add 1 to avoid division by zero
+
+        # Adjust temperature based on feedback
+        if feedback_ratio > 0.8:
             generation_config['temperature'] += 0.1
         else:
-            # Decrease temperature for more cautious responses
             generation_config['temperature'] -= 0.1
 
-        # Clamp the temperature to a reasonable range (e.g., 0.1 to 1.5)
+        # Clamp temperature to a reasonable range
         generation_config['temperature'] = max(0.1, min(1.5, generation_config['temperature']))
+
+        # Adjust top_k based on feedback
+        if feedback_ratio > 0.8:
+            generation_config['top_k'] = min(100, generation_config.get('top_k', 50) + 1)  # Increase top_k
+        else:
+            generation_config['top_k'] = max(1, generation_config.get('top_k', 50) - 1)  # Decrease top_k
+
+        # Clamp top_k to a reasonable range
+        generation_config['top_k'] = max(1, min(100, generation_config['top_k']))
+
+        # Adjust top_p based on feedback
+        if feedback_ratio > 0.8:
+            generation_config['top_p'] = min(1.0, generation_config.get('top_p', 0.9) + 0.01)  # Increase top_p
+        else:
+            generation_config['top_p'] = max(0.0, generation_config.get('top_p', 0.9) - 0.01)  # Decrease top_p
+
+        # Clamp top_p to a reasonable range
+        generation_config['top_p'] = max(0.0, min(1.0, generation_config['top_p']))
 
     # Save the updated config to a file
     with open("generation_config.json", "w") as config_file:
@@ -96,8 +118,9 @@ def update_parameters_based_on_feedback():
 
     save_memory()
 
-
 # Load textfile with prompt instructions for AI
+
+
 try:
     with open("chatbot_instructions.txt", "r") as instructions:
         chatbot_instructions = instructions.read().strip()
