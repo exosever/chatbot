@@ -15,13 +15,15 @@ load_dotenv('chatbot.env')
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Access the twitch environment variables
+# Access ENV variables
 TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
-TWITCH_CHANNEL_NAME = 'thejoshinatah'
-
-# Google Gemini API key
+TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
 genai.configure(api_key=os.getenv('GENAI_API_KEY'))
+
+# BOT_NAME is the twitch account, BOT_NICKNAME is what you will call the bot
+BOT_NAME = 'chesterbot9000'
+BOT_NICKNAME = 'Chester'
 
 # Create the LLM model
 generation_config = {
@@ -33,8 +35,11 @@ generation_config = {
 }
 
 # Load textfile with prompt instructions for AI
-with open("chatbot_instructions.txt", "r") as instructions:
-    chatbot_instructions = instructions.read().strip()
+try:
+    with open("chatbot_instructions.txt", "r") as instructions:
+        chatbot_instructions = instructions.read().strip()
+except FileNotFoundError:
+    pass
 
 # Model settings
 model = genai.GenerativeModel(
@@ -72,7 +77,7 @@ def save_memory():
 bot = commands.Bot(
     token=TWITCH_OAUTH_TOKEN,
     client_id=TWITCH_CLIENT_ID,
-    nick='chesterbot9000',
+    nick=BOT_NAME,
     prefix='!',
     initial_channels=[TWITCH_CHANNEL_NAME]
 )
@@ -137,7 +142,7 @@ async def event_ready():
         if channel:
             await channel.send(
                 'Hello everyone! I am now online and ready to chat!'
-                )
+            )
             logging.info('Sent online confirmation message to chat.')
         else:
             logging.error(f"Channel {TWITCH_CHANNEL_NAME} not found.")
@@ -158,13 +163,13 @@ async def event_message(message):
     if bot.nick.lower() not in str(message.author).lower():
         message_count += 1
 
-    # Process messages that start with "chester" or "@chesterbot9000"
+    # Process messages that start with bot_nickname or "@bot_nickname"
     if (
-        message.content.lower().startswith("chester")
-        or message.content.lower().startswith("@chesterbot9000")
+        message.content.lower().startswith(BOT_NICKNAME)
+        or message.content.lower().startswith(f"@{BOT_NAME}")
     ):
         user_id = str(message.author.id)
-        prompt = message.content[len("chester"):].strip()
+        prompt = message.content[len(BOT_NICKNAME):].strip()
         logging.debug(f"Processed prompt: {prompt}")
         response = await query_gemini_with_memory(user_id, prompt)
         try:
@@ -193,11 +198,11 @@ async def automated_response():
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
                 if channel:
                     await channel.send(
-                        "Hey There! I'm Chester, "
+                        f"Hey There! I'm {BOT_NICKNAME}, "
                         "your friendly neighborhood racoon! "
                         "Feel free to chat with me "
                         "by calling my name first ^.^ "
-                        "ie: Chester, why is Josh such a great name?"
+                        f"ie: {BOT_NICKNAME}, why is Josh such a great name?"
                     )
 
                     logging.info('Sent automated response to chat.')
