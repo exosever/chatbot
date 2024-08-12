@@ -36,6 +36,7 @@
         <li>Implement STT feature for streamer</li>
         <li>Integrate Wikipedia API for more knowledgable responses</li>
         <li>Integrate web search for real-time data</li>
+        <li>Add reinforcement learning to fine-tune responses</li>
     </ul>
     <br>
     <br>
