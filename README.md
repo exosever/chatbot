@@ -1,7 +1,7 @@
 <body>
     <h1>Twitch AI Chatbot</h1>
     <h2>Overview</h2>
-    <p>This project involves a customizable Twitch AI chatbot that adapts and learns from chat history on a user-by-user basis. It leverages the Gemini 1.5 Flash model to generate text responses and uses SQLite for storing user-submitted prompts. The stored prompts are utilized in future interactions to enhance the quality and relevance of the chatbot's responses based on learned data.</p>
+    <p>This project involves a customizable Twitch AI chatbot that adapts and learns from chat history on a user-by-user basis. It leverages the Gemini 1.5 Flash model to generate text responses and uses JSON for storing user-submitted prompts. The stored prompts are utilized in future interactions to enhance the quality and relevance of the chatbot's responses based on learned data.</p>
     <h2>Features</h2>
     <ul>
         <li><strong>Generative AI:</strong> Utilizes the Gemini 1.5 Flash model for generating context-aware text responses.</li>
