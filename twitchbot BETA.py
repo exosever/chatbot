@@ -5,41 +5,48 @@ import json
 import pygame
 import wikipediaapi
 import os
+import time
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 import google.generativeai as genai
 from twitchio.ext import commands
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
 from google.cloud import texttospeech
 
-# Load environment variables from .env file
-load_dotenv('chatbot_variables.env')
-
-# Set up logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Access ENV variables
+"""
+These are the environmental variables for the API keys
+"""
+
+load_dotenv('chatbot_variables.env')
+
 TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
 genai.configure(api_key=os.getenv('GENAI_API_KEY'))
-GOOGLE_APPLICATION_CREDENTIALS = "path_to_your_service_account_key.json"
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
+                                                            'google.json')
 
-# BOT_NAME is the twitch account, BOT_NICKNAME is what you will call the bot
-BOT_NAME = 'chesterbot9000'
-BOT_NICKNAME = 'Chester'
 
-# Initialize Google Cloud TTS client
+"""
+This block handle the Google TTS API
+Adjust model, language, pitch, speed, etc
+"""
+
 client = texttospeech.TextToSpeechClient()
 
 
-def synthesize_speech(text, pitch=0, speaking_rate=1.0):
+def synthesize_speech(text, pitch=13.60, speaking_rate=1.19):
 
     input_text = texttospeech.SynthesisInput(text=text)
 
     voice = texttospeech.VoiceSelectionParams(
         language_code="en-US",
-        name="en-US-Wavenet-D",  # You can change this to a voice you prefer
+        name="en-US-Neural2-I",
     )
 
     audio_config = texttospeech.AudioConfig(
@@ -60,7 +67,15 @@ def synthesize_speech(text, pitch=0, speaking_rate=1.0):
     return audio_file
 
 
-# Create the LLM model or load the generation config at startup
+"""
+Set the bot name(twitch account) and nickname
+Also load the generation config from a JSON file
+If a config is not present, a default one will be created
+"""
+
+BOT_NAME = 'chesterbot9000'
+BOT_NICKNAME = 'chester'
+
 try:
     with open("generation_config.json", "r") as config_file:
         generation_config = json.load(config_file)
@@ -74,52 +89,62 @@ except FileNotFoundError:
         "response_mime_type": "text/plain",
     }
 
-# Feedback memory for altering generation config based on user input
+"""
+This block handles the reinforcement learning
+It takes user feedback values
+And adjusts the parameters of the model
+"""
+feedback_counter = 0
 feedback_memory = {}
 
 
 def update_parameters_based_on_feedback():
-    global generation_config
+    global generation_config, feedback_counter
 
     for user_id, feedback in feedback_memory.items():
-        # Calculate the feedback ratio
-        feedback_ratio = feedback['positive'] / (feedback['positive'] + feedback['negative'] + 1)  # Add 1 to avoid division by zero
 
-        # Adjust temperature based on feedback
+        feedback_ratio = feedback['positive'] / \
+            (feedback['positive'] + feedback['negative'] + 1)
+
         if feedback_ratio > 0.8:
             generation_config['temperature'] += 0.1
         else:
             generation_config['temperature'] -= 0.1
 
-        # Clamp temperature to a reasonable range
-        generation_config['temperature'] = max(0.1, min(1.5, generation_config['temperature']))
+        generation_config['temperature'] = max(
+            0.1, min(1.5, generation_config['temperature']))
 
-        # Adjust top_k based on feedback
         if feedback_ratio > 0.8:
-            generation_config['top_k'] = min(100, generation_config.get('top_k', 50) + 1)  # Increase top_k
+            generation_config['top_k'] = min(
+                100, generation_config.get('top_k', 50) + 1)  # Increase top_k
         else:
-            generation_config['top_k'] = max(1, generation_config.get('top_k', 50) - 1)  # Decrease top_k
+            generation_config['top_k'] = max(
+                1, generation_config.get('top_k', 50) - 1)  # Decrease top_k
 
-        # Clamp top_k to a reasonable range
-        generation_config['top_k'] = max(1, min(100, generation_config['top_k']))
+        generation_config['top_k'] = max(
+            1, min(100, generation_config['top_k']))
 
-        # Adjust top_p based on feedback
         if feedback_ratio > 0.8:
-            generation_config['top_p'] = min(1.0, generation_config.get('top_p', 0.9) + 0.01)  # Increase top_p
+            generation_config['top_p'] = min(
+                1.0, generation_config.get('top_p', 0.9) + 0.01)
         else:
-            generation_config['top_p'] = max(0.0, generation_config.get('top_p', 0.9) - 0.01)  # Decrease top_p
+            generation_config['top_p'] = max(
+                0.0, generation_config.get('top_p', 0.9) - 0.01)
 
-        # Clamp top_p to a reasonable range
-        generation_config['top_p'] = max(0.0, min(1.0, generation_config['top_p']))
+        generation_config['top_p'] = max(
+            0.0, min(1.0, generation_config['top_p']))
 
-    # Save the updated config to a file
     with open("generation_config.json", "w") as config_file:
         json.dump(generation_config, config_file)
 
     save_memory()
 
-# Load textfile with prompt instructions for AI
+    feedback_counter = 0
 
+
+"""
+Load the instructions for the bot if they exist
+"""
 
 try:
     with open("chatbot_instructions.txt", "r") as instructions:
@@ -127,8 +152,10 @@ try:
 except FileNotFoundError:
     pass
 
-# Model settings
+
 """
+Model settings and paramters
+
 BLOCK_ONLY_HIGH
 BLOCK_ONLY_MEDIUM
 BLOCK_ONLY_LOW
@@ -152,14 +179,15 @@ model = genai.GenerativeModel(
     }
 )
 
-# Load persistent memory
+"""
+Load and save the persistent memory
+"""
+
 try:
     with open("chatbot_memory.json", "r") as memory_file:
         chatbot_memory = json.load(memory_file)
 except FileNotFoundError:
     chatbot_memory = {}
-
-# Save the current memory to the file
 
 
 def save_memory():
@@ -167,7 +195,10 @@ def save_memory():
         json.dump(chatbot_memory, memory_file)
 
 
-# Initialize the bot
+"""
+Initialize the bot
+"""
+
 bot = commands.Bot(
     token=TWITCH_OAUTH_TOKEN,
     client_id=TWITCH_CLIENT_ID,
@@ -176,26 +207,50 @@ bot = commands.Bot(
     initial_channels=[TWITCH_CHANNEL_NAME]
 )
 
-# Counter for message tracking
+"""
+Counters to keep chatbot, commands, and automated messages from spamming
+"""
+
 message_count = 0
 last_message_time = None
 
+"""
+Function to query the Wikipedia API
+"""
 
-# Create a Wikipedia object for a specific language (e.g., English)
-wiki_wiki = wikipediaapi.Wikipedia('en')
+wiki_wiki = wikipediaapi.Wikipedia(
+    language='en',
+    user_agent=f'{BOT_NAME} ; Python/3.x'
+)
 
-# Asynchronous function to fetch summary from Wikipedia
+nltk.download('punkt')
+nltk.download('punkt_tab')
+nltk.download('stopwords')
+
+
+def extract_keywords(query):
+    stop_words = set(stopwords.words('english'))
+    word_tokens = word_tokenize(query)
+    keywords = [word for word in word_tokens if word.isalnum()
+                and word.lower() not in stop_words]
+    return keywords
 
 
 async def fetch_wikipedia_summary(query):
-    page = wiki_wiki.page(query)
-    if page.exists():
-        summary = page.summary[:1000]  # Limiting to the first 1000 characters
-        return summary
-    else:
-        return None
+    keywords = extract_keywords(query)
+    for keyword in keywords:
+        page = wiki_wiki.page(keyword)
+        if page.exists():
+            return page.summary[:1000]  # Return a limited summary
+    return "Sorry, I couldn't find relevant information."
 
-# Function to call the Google Gemini API
+
+"""
+This function formats the prompt to be sent to the API
+It gathers historic user data if available
+It then sends the generated response to the chat
+And saves the user prompt and response to the memory
+"""
 
 
 async def query_gemini_with_memory(user_id, prompt):
@@ -203,11 +258,9 @@ async def query_gemini_with_memory(user_id, prompt):
 
     chat_session = model.start_chat(history=[])
 
-    # Retrieve user-specific memory if available
     user_memory = chatbot_memory.get(user_id, {}).get('prompts', [])
     previous_data = "\n".join(user_memory)
 
-    # Formulate the full prompt with clear distinctions
     full_prompt = (
         "Here is some previous data from the user to keep in mind:\n"
         f"{previous_data}\n\n"
@@ -216,24 +269,21 @@ async def query_gemini_with_memory(user_id, prompt):
     )
 
     try:
-        # Asynchronously fetch Wikipedia summary
-        wiki_summary_task = asyncio.create_task(fetch_wikipedia_summary(prompt))
+        wiki_summary_task = asyncio.create_task(
+            fetch_wikipedia_summary(prompt))
 
-        # Wait for Wikipedia task to complete
         wiki_summary = await wiki_summary_task
 
-        # Include Wikipedia summary in the full prompt if available
         if wiki_summary:
             full_prompt += (
-                "\n\nAdditionally, here is some related factual information from Wikipedia:\n"
+                "\n\nAdditionally, here is some related factual"
+                "information from Wikipedia:\n"
                 f"{wiki_summary}"
             )
 
-        # Generate the response from the Gemini model
         response = chat_session.send_message(full_prompt)
         generated_text = response.text.strip()
 
-        # Store the prompt for future reference
         if user_id not in chatbot_memory:
             chatbot_memory[user_id] = {'prompts': []}
         chatbot_memory[user_id]['prompts'].append(prompt)
@@ -248,40 +298,91 @@ async def query_gemini_with_memory(user_id, prompt):
         logging.error(f"Error in query processing: {e}")
         return "Sorry, I'm having trouble with the AI service right now."
 
+"""
+Command to describe the AI to the user
+"""
+
+
+@bot.command(name='AI')
+async def ai(ctx):
+    await ctx.send("I'm a bot created by @thejoshinatah! ^.^"
+                   "I am powered by Google Gemini and have the ability"
+                   "to learn and remember from our conversations!"
+                   )
+
+"""
+This function saves the feedback from the user
+Simple positive or negative feedback will be used to adjust
+the parameters of the model
+"""
+
 
 @bot.command(name='feedback')
 async def feedback(ctx, feedback_type):
+    global feedback_counter
     user_id = str(ctx.author.id)
     if user_id not in feedback_memory:
         feedback_memory[user_id] = {'positive': 0, 'negative': 0}
 
     if feedback_type.lower() == 'good':
         feedback_memory[user_id]['positive'] += 1
-        await ctx.send("Thanks for the feedback!")
+        await ctx.send("Thank's for letting me know! ^.^")
     elif feedback_type.lower() == 'bad':
         feedback_memory[user_id]['negative'] += 1
-        await ctx.send("Sorry to hear that. I'll try to improve!")
+        await ctx.send("I'm sorry about that! Thanks for"
+                       "helping me do better next time!")
+    else:
+        feedback_counter += 1
+
+"""
+This function redeems a TTS Message channel point reward to send
+The generated response through the Google TTS API to the chat
+"""
 
 
 @bot.event()
-async def on_channel_point_redemption(redemption):
+async def on_channel_points_redeem(redemption):
+    logging.info(f"Channel point redemption detected: {
+                 redemption.reward.title}")
+    print(f"Channel point redemption detected: {redemption.reward.title}")
+
     if redemption.reward.title == "TTS Message":
+        logging.info(f"TTS Message reward redeemed by user {
+                     redemption.user.name} ({redemption.user.id})")
         user_message = redemption.user_input
+        logging.info(f"User message: {user_message}")
 
-        # Process the message with the Gemini API
-        response = await query_gemini_with_memory(str(redemption.user.id), user_message)
+        try:
+            # Query the Gemini model with memory
+            response = await query_gemini_with_memory(str(redemption.user.id),
+                                                      user_message)
+            logging.info(f"Generated response from Gemini: {response}")
 
-        # Synthesize speech with default pitch and rate
-        audio_file = synthesize_speech(response, pitch=0, speaking_rate=1.0)
+            # Synthesize speech with the response
+            audio_file = synthesize_speech(response)
+            logging.info(f"Generated speech audio file: {audio_file}")
 
-        # Initialize pygame mixer and play the TTS audio
-        pygame.mixer.init()
-        pygame.mixer.music.load(audio_file)
-        pygame.mixer.music.play()
+            # Initialize pygame mixer
+            pygame.mixer.init()
+            pygame.mixer.music.load(audio_file)
+            pygame.mixer.music.play()
 
-        # Wait until the playback is finished
-        while pygame.mixer.music.get_busy():
-            pygame.time.Clock().tick(10)
+            logging.info("Playing audio file...")
+
+            # Wait until the playback is finished
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(10)
+
+            logging.info("Audio playback finished.")
+
+        except Exception as e:
+            logging.error(f"Error in TTS redemption processing: {e}")
+
+
+"""
+This function is used to send a message to the chat when the bot is ready.
+Debug connectivity to Twitch
+"""
 
 
 @bot.event()
@@ -289,7 +390,6 @@ async def event_ready():
     logging.info(f'Logged in as | {bot.nick}')
     logging.info(f'Connected to channel | {TWITCH_CHANNEL_NAME}')
 
-    # Send a message to the chat confirming the bot is online
     try:
         channel = bot.get_channel(TWITCH_CHANNEL_NAME)
         if channel:
@@ -302,13 +402,16 @@ async def event_ready():
     except Exception as e:
         logging.error(f"Error sending confirmation message: {e}")
 
-    # Start the automated response task
     bot.loop.create_task(automated_response())
 
-# Function to handle messages and trigger responses
-
-
+"""
+This function checks if the message is from a user
+If so, it formats the prompt to be sent to the API
+It also sends the generated response to the chat
+And only after 60 seconds sends a message asking the user to use !feedback
+"""
 last_feedback_message_time = 0
+
 
 @bot.event()
 async def event_message(message):
@@ -316,11 +419,9 @@ async def event_message(message):
 
     current_time = time.time()
 
-    # Do not include bot messages in message_count
     if bot.nick.lower() not in str(message.author).lower():
         message_count += 1
 
-    # Process messages that start with bot_nickname or "@bot_nickname"
     if (
         message.content.lower().startswith(BOT_NICKNAME)
         or message.content.lower().startswith(f"@{BOT_NAME}")
@@ -331,25 +432,29 @@ async def event_message(message):
         response = await query_gemini_with_memory(user_id, prompt)
         try:
             await message.channel.send(response)
-            
-            # Check if 60 seconds have passed since the last feedback message
+
             if current_time - last_feedback_message_time >= 60:
                 await message.channel.send(
-                    'Be sure to use !feedback <good/bad> to provide feedback on my responses!'
+                    'Be sure to use !feedback <good/bad> '
+                    'to let me know if I did a good job!'
                 )
-                # Update the timestamp for the last feedback message
+
                 last_feedback_message_time = current_time
 
             logging.info(f"Sent response: {response}")
         except Exception as e:
             logging.error(f"Error sending message: {e}")
-    elif message.content.lower().startswith("!ai"):
-        logging.info(f"Received !ai command from user: {message.author}")
-        await message.channel.send("I am an AI")
     else:
         logging.debug(f"Ignoring message: {message.content}")
 
-# Function to send automated responses
+"""
+This is a loop that will send a message to chat
+after at least 10 user messages have been received
+and 10-20 minutes have passed
+
+This block also updates the parameters of the model
+based off the feedback received
+"""
 
 
 async def automated_response():
@@ -358,7 +463,8 @@ async def automated_response():
     while True:
         wait_time = random.randint(600, 1200)
         await asyncio.sleep(wait_time)
-        update_parameters_based_on_feedback()
+        if feedback_counter > 10:
+            update_parameters_based_on_feedback()
         if message_count >= 10:
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
