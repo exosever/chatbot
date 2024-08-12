@@ -327,6 +327,9 @@ async def event_message(message):
         response = await query_gemini_with_memory(user_id, prompt)
         try:
             await message.channel.send(response)
+            await message.channel.send(
+                'Be sure to use !feedback <good/bad> to provide feedback on my responses!'
+            )
             logging.info(f"Sent response: {response}")
         except Exception as e:
             logging.error(f"Error sending message: {e}")
