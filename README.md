@@ -48,7 +48,7 @@
     <h1>Change Log</h1>
     <br>
     <div class="version">
-        <h2>Version 1.1.0</h2>
+        <h2>Version 1.0</h2>
         <div class="section">
             <div class="section-title">New Features:</div>
             <ul>
@@ -89,7 +89,7 @@
         </div>
     </div>
 <div class="version">
-        <h2>Version 1.2.0</h2>
+        <h2>Version 2.0</h2>
         <div class="section">
             <div class="section-title">New Features:</div>
             <ul>
