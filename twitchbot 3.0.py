@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import os
 
 # Load environment variables from .env file
-load_dotenv('chatbot.env')
+load_dotenv('chatbot_variables.env')
 
 # Set up logging
 logging.basicConfig(level=logging.INFO,
