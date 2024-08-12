@@ -32,7 +32,8 @@
     <h1>Upcoming Updates and Features</h1>
     <ul>
         <li>Upgrade from JSON database to SQLite</li>
-        <li>Implement a TTS service - Currently in BETA</li>
+        <li>Implement a TTS feature - Currently in BETA</li>
+        <li>Implement STT feature for streamer</li>
     </ul>
     <br>
     <br>
