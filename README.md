@@ -36,6 +36,8 @@
     <br>
     <h2>Change List</h2>
     <ul>
-        <li></li>
+        <li>Version 1.0 - Used GPT NEO from the hugging tree library. Plain text API keys. </li>
+        <li>Version 2.0 - Switched to Gemini Flash 1.5 model. Added system instructions and safety settings. Added a reminder message after 300-600 seconds and >10 messages. </li>
+        <li>Version 3.0 - Added API keys to dotenv file. Moved system instructions to a readable file for convenience. Added JSON database for "brain" of AI to learn and remember user interactions. </li>
     </ul>
 </body>
