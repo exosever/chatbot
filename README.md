@@ -28,4 +28,8 @@
     </ol>
     <h2>Summary</h2>
     <p>This Twitch AI chatbot offers a powerful and flexible platform for engaging with users in a personalized way. With its ability to learn from past interactions and adapt its responses, it provides a dynamic and interactive experience for Twitch communities.</p>
+    <h2>Upcoming Updates and Features</h2>
+    <ul>
+        <li>Upgrade from JSON database to SQLite</li>
+    </ul>
 </body>
