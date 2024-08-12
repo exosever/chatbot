@@ -32,6 +32,7 @@
     <h2>Upcoming Updates and Features</h2>
     <ul>
         <li>Upgrade from JSON database to SQLite</li>
+        <li>Implement a TTS service</li>
     </ul>
     <br>
     <h2>Change List</h2>
