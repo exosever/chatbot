@@ -37,6 +37,8 @@
         <li>Integrate Wikipedia API for more knowledgable responses</li>
         <li>Integrate web search for real-time data</li>
         <li>Add reinforcement learning to fine-tune responses</li>
+        <li>Add moods</li>
+        <li>Adjust databse to include full conversations</li>
     </ul>
     <br>
     <br>
