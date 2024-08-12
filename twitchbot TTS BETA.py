@@ -60,14 +60,42 @@ def synthesize_speech(text, pitch=0, speaking_rate=1.0):
     return audio_file
 
 
-# Create the LLM model
-generation_config = {
-    "temperature": 0.9,
-    "top_p": 0.95,
-    "top_k": 64,
-    "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-}
+# Create the LLM model or load the generation config at startup
+try:
+    with open("generation_config.json", "r") as config_file:
+        generation_config = json.load(config_file)
+except FileNotFoundError:
+    # If the file doesn't exist, use default settings
+    generation_config = {
+        "temperature": 0.9,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_output_tokens": 8192,
+        "response_mime_type": "text/plain",
+    }
+
+# Feedback memory for altering generation config based on user input
+feedback_memory = {}
+
+
+def update_parameters_based_on_feedback():
+    for user_id, feedback in feedback_memory.items():
+        if feedback['positive'] / (feedback['positive'] + feedback['negative']) > 0.8:
+            # Increase response temperature for more creative responses
+            generation_config['temperature'] += 0.1
+        else:
+            # Decrease temperature for more cautious responses
+            generation_config['temperature'] -= 0.1
+
+        # Clamp the temperature to a reasonable range (e.g., 0.1 to 1.5)
+        generation_config['temperature'] = max(0.1, min(1.5, generation_config['temperature']))
+
+    # Save the updated config to a file
+    with open("generation_config.json", "w") as config_file:
+        json.dump(generation_config, config_file)
+
+    save_memory()
+
 
 # Load textfile with prompt instructions for AI
 try:
@@ -129,6 +157,10 @@ bot = commands.Bot(
 message_count = 0
 last_message_time = None
 
+
+# Create a Wikipedia object for a specific language (e.g., English)
+wiki_wiki = wikipediaapi.Wikipedia('en')
+
 # Asynchronous function to fetch summary from Wikipedia
 
 
@@ -139,7 +171,7 @@ async def fetch_wikipedia_summary(query):
         return summary
     else:
         return None
-      
+
 # Function to call the Google Gemini API
 
 
@@ -163,7 +195,7 @@ async def query_gemini_with_memory(user_id, prompt):
     try:
         # Asynchronously fetch Wikipedia summary
         wiki_summary_task = asyncio.create_task(fetch_wikipedia_summary(prompt))
-        
+
         # Wait for Wikipedia task to complete
         wiki_summary = await wiki_summary_task
 
@@ -192,6 +224,20 @@ async def query_gemini_with_memory(user_id, prompt):
     except Exception as e:
         logging.error(f"Error in query processing: {e}")
         return "Sorry, I'm having trouble with the AI service right now."
+
+
+@bot.command(name='feedback')
+async def feedback(ctx, feedback_type):
+    user_id = str(ctx.author.id)
+    if user_id not in feedback_memory:
+        feedback_memory[user_id] = {'positive': 0, 'negative': 0}
+
+    if feedback_type.lower() == 'good':
+        feedback_memory[user_id]['positive'] += 1
+        await ctx.send("Thanks for the feedback!")
+    elif feedback_type.lower() == 'bad':
+        feedback_memory[user_id]['negative'] += 1
+        await ctx.send("Sorry to hear that. I'll try to improve!")
 
 
 @bot.event()
@@ -276,7 +322,7 @@ async def automated_response():
     while True:
         wait_time = random.randint(300, 600)
         await asyncio.sleep(wait_time)
-
+        update_parameters_based_on_feedback()
         if message_count >= 10:
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
