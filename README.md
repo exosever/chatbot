@@ -34,9 +34,9 @@
         <li>Upgrade from JSON database to SQLite</li>
         <li>Implement a TTS feature - Currently in BETA</li>
         <li>Implement STT feature for streamer</li>
-        <li>Integrate Wikipedia API for more knowledgable responses</li>
+        <li>Integrate Wikipedia API for more knowledgable responses - Currently in BETA</li>
         <li>Integrate web search for real-time data</li>
-        <li>Add reinforcement learning to fine-tune responses</li>
+        <li>Add reinforcement learning to fine-tune responses - Currently in BETA</li>
         <li>Add moods</li>
         <li>Adjust databse to include full conversations</li>
         <li>Add Sentiment Analysis</li>
