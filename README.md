@@ -44,21 +44,94 @@
     </ul>
     <br>
     <br>
-    <h1>Project Changelog</h1>
+<body>
+    <h1>Change Log</h1>
+    <br>
     <div class="version">
-        <h2>Version 1.0</h2>
-        <ul>
-            <li><strong>Integration:</strong> Utilized GPT-Neo model from the Hugging Face library.</li>
-            <li><strong>Configuration:</strong> Employed plain text API keys for authentication and service access.</li>
-        </ul>
+        <h2>Version 1.1.0</h2>
+        <div class="section">
+            <div class="section-title">New Features:</div>
+            <ul>
+                <li>Integrated Google Gemini API for advanced AI responses.</li>
+                <li>Added automated response functionality to engage viewers after a set number of messages.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Improvements:</div>
+            <ul>
+                <li>Updated logging configuration to include timestamps and log levels for better debugging.</li>
+                <li>Replaced Hugging Face GPT-2 model with Google Gemini for more dynamic and creative responses.</li>
+                <li>Enhanced safety settings to block harmful content categories from the Google Gemini API.</li>
+                <li>Implemented automated responses that trigger when a certain number of messages are received.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Bug Fixes:</div>
+            <ul>
+                <li>Fixed issue where invalid responses from Hugging Face API were not properly handled.</li>
+                <li>Corrected handling of message prompts to improve accuracy of AI responses.</li>
+                <li>Resolved issue with bot message filtering to ensure accurate message counting.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Code Enhancements:</div>
+            <ul>
+                <li>Added detailed logging for API interactions and message processing.</li>
+                <li>Improved error handling for API request failures and message sending issues.</li>
+                <li>Updated prompt processing to handle variations in message content more effectively.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Dependencies Updated:</div>
+            <ul>
+                <li>Switched from using the Hugging Face API to Google Gemini API for natural language generation.</li>
+            </ul>
+        </div>
     </div>
-    <div class="version">
-        <h2>Version 2.0</h2>
-        <ul>
-            <li><strong>Model Upgrade:</strong> Transitioned to Gemini Flash 1.5 model for enhanced performance and capabilities.</li>
-            <li><strong>System Instructions:</strong> Implemented system instructions and safety settings to refine response quality and ensure compliance with content policies.</li>
-            <li><strong>Automated Messaging:</strong> Introduced a periodic reminder message feature, triggering after 300-600 seconds and upon receiving more than 10 messages, to engage users and encourage interaction.</li>
-        </ul>
+<div class="version">
+        <h2>Version 1.2.0</h2>
+        <div class="section">
+            <div class="section-title">New Features:</div>
+            <ul>
+                <li>Switched to environment variables for configuration using a `.env` file.</li>
+                <li>Added support for persistent memory storage in `chatbot_memory.json` for user-specific interactions.</li>
+                <li>Implemented user-specific memory in AI responses to retain context across messages.</li>
+                <li>Integrated `dotenv` for managing environment variables securely.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Improvements:</div>
+            <ul>
+                <li>Updated the AI model's system instruction and safety settings for better performance and content moderation.</li>
+                <li>Revised message handling to include user-specific context in responses and handle bot commands.</li>
+                <li>Improved logging to include detailed information about memory interactions and API calls.</li>
+                <li>Adjusted AI response temperature for a balance between creativity and coherence.</li>
+                <li>Refined automated response logic to use updated bot name and nickname.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Bug Fixes:</div>
+            <ul>
+                <li>Resolved issues with handling environment variables and file loading errors.</li>
+                <li>Fixed problems with saving and loading persistent memory correctly.</li>
+                <li>Addressed issues with message content filtering and response accuracy.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Code Enhancements:</div>
+            <ul>
+                <li>Added support for external configuration files and environment variables for improved security and flexibility.</li>
+                <li>Introduced a more robust system for managing and utilizing persistent memory in AI interactions.</li>
+                <li>Improved the automated response system to ensure more engaging interactions with viewers.</li>
+            </ul>
+        </div>
+        <div class="section">
+            <div class="section-title">Dependencies Updated:</div>
+            <ul>
+                <li>Added `dotenv` for environment variable management.</li>
+                <li>Revised dependencies related to AI model configuration and memory handling.</li>
+            </ul>
+        </div>
     </div>
     <div class="version">
         <h2>Version 3.0</h2>
