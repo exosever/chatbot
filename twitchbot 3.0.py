@@ -42,6 +42,14 @@ except FileNotFoundError:
     pass
 
 # Model settings
+"""
+BLOCK_ONLY_HIGH
+BLOCK_ONLY_MEDIUM
+BLOCK_ONLY_LOW
+BLOCK_HIGH_AND_MEDIUM
+BLOCK_HIGH_AND_MEDIUM_AND_LOW
+BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE
+"""
 model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=generation_config,
