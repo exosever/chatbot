@@ -48,7 +48,7 @@
     <h1>Change Log</h1>
     <br>
     <div class="version">
-        <h2>Version 1.0</h2>
+        <h2>Version 2.0</h2>
         <div class="section">
             <div class="section-title">New Features:</div>
             <ul>
@@ -89,7 +89,7 @@
         </div>
     </div>
 <div class="version">
-        <h2>Version 2.0</h2>
+        <h2>Version 3.0</h2>
         <div class="section">
             <div class="section-title">New Features:</div>
             <ul>
@@ -134,12 +134,7 @@
         </div>
     </div>
     <div class="version">
-        <h2>Version 3.0</h2>
-        <ul>
-            <li><strong>Configuration Management:</strong> Migrated API keys to a <code>.env</code> file for improved security and management of sensitive information.</li>
-            <li><strong>System Instructions:</strong> Moved system instructions to an external readable file, facilitating easier updates and management.</li>
-            <li><strong>User Interaction Memory:</strong> Implemented a JSON-based database to store and manage user interactions, allowing the AI to learn from and remember user input for enhanced personalization and context-aware responses.</li>
-        </ul>
-    </div>
+        <h2>Version 4.0</h2>
+<p>Coming Soon</p>
 </body>
 </html>
