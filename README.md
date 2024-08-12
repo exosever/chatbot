@@ -40,6 +40,7 @@
         <li>Add moods</li>
         <li>Adjust database to include full conversations</li>
         <li>Add Sentiment Analysis</li>
+        <li>Add !AI command to describe the AI and it's features</li>
     </ul>
     <br>
     <br>
