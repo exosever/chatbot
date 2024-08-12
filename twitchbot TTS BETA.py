@@ -3,12 +3,13 @@ import asyncio
 import random
 import json
 import pygame
+import wikipediaapi
+import os
 import google.generativeai as genai
 from twitchio.ext import commands
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
 from google.cloud import texttospeech
-import os
 
 # Load environment variables from .env file
 load_dotenv('chatbot_variables.env')
@@ -128,6 +129,17 @@ bot = commands.Bot(
 message_count = 0
 last_message_time = None
 
+# Asynchronous function to fetch summary from Wikipedia
+
+
+async def fetch_wikipedia_summary(query):
+    page = wiki_wiki.page(query)
+    if page.exists():
+        summary = page.summary[:1000]  # Limiting to the first 1000 characters
+        return summary
+    else:
+        return None
+      
 # Function to call the Google Gemini API
 
 
@@ -149,10 +161,22 @@ async def query_gemini_with_memory(user_id, prompt):
     )
 
     try:
+        # Asynchronously fetch Wikipedia summary
+        wiki_summary_task = asyncio.create_task(fetch_wikipedia_summary(prompt))
+        
+        # Wait for Wikipedia task to complete
+        wiki_summary = await wiki_summary_task
+
+        # Include Wikipedia summary in the full prompt if available
+        if wiki_summary:
+            full_prompt += (
+                "\n\nAdditionally, here is some related factual information from Wikipedia:\n"
+                f"{wiki_summary}"
+            )
+
+        # Generate the response from the Gemini model
         response = chat_session.send_message(full_prompt)
-        logging.debug(f"Raw response: {response}")
         generated_text = response.text.strip()
-        logging.info(f"Gemini response: {generated_text}")
 
         # Store the prompt for future reference
         if user_id not in chatbot_memory:
@@ -166,11 +190,8 @@ async def query_gemini_with_memory(user_id, prompt):
         return generated_text
 
     except Exception as e:
-        logging.error(f"Error calling Gemini API: {e}")
-        return (
-            "Sorry, I'm having trouble connecting to the AI service "
-            "right now."
-        )
+        logging.error(f"Error in query processing: {e}")
+        return "Sorry, I'm having trouble with the AI service right now."
 
 
 @bot.event()
