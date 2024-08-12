@@ -308,9 +308,13 @@ async def event_ready():
 # Function to handle messages and trigger responses
 
 
+last_feedback_message_time = 0
+
 @bot.event()
 async def event_message(message):
-    global message_count
+    global message_count, last_feedback_message_time
+
+    current_time = time.time()
 
     # Do not include bot messages in message_count
     if bot.nick.lower() not in str(message.author).lower():
@@ -327,9 +331,15 @@ async def event_message(message):
         response = await query_gemini_with_memory(user_id, prompt)
         try:
             await message.channel.send(response)
-            await message.channel.send(
-                'Be sure to use !feedback <good/bad> to provide feedback on my responses!'
-            )
+            
+            # Check if 60 seconds have passed since the last feedback message
+            if current_time - last_feedback_message_time >= 60:
+                await message.channel.send(
+                    'Be sure to use !feedback <good/bad> to provide feedback on my responses!'
+                )
+                # Update the timestamp for the last feedback message
+                last_feedback_message_time = current_time
+
             logging.info(f"Sent response: {response}")
         except Exception as e:
             logging.error(f"Error sending message: {e}")
@@ -346,7 +356,7 @@ async def automated_response():
     global message_count
 
     while True:
-        wait_time = random.randint(300, 600)
+        wait_time = random.randint(600, 1200)
         await asyncio.sleep(wait_time)
         update_parameters_based_on_feedback()
         if message_count >= 10:
