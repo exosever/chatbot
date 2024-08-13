@@ -112,6 +112,7 @@
             <li>Integrated DuckDuckGo Instant Answer API for quick and relevant search results in chatbot responses.</li>
             <li>Implemented a mood-based system allowing the chatbot to exhibit a range of emotional states: Happy, Sad, Angry, Excited, Confused, Bored, Curious, Calm, Nervous, and Motivated.</li>
             <li>Developed slider functionality for gradual changes in emotional state, enabling smooth transitions based on user interactions.</li>
+            <li>Integrated Wikipedia API to query keywords in user prompts to increase accuracy and depth of responses.</li>
         </ul>
         <h3>Improvements:</h3>
         <ul>
@@ -122,12 +123,10 @@
         <h3>Bug Fixes:</h3>
         <ul>
             <li>Resolved issues with emotional state transitions for appropriate mood adjustments.</li>
-            <li>Fixed problems with SQLite database interactions, including data pruning and session management.</li>
         </ul>
         <h3>Code Enhancements:</h3>
         <ul>
             <li>Improved handling of mood-based responses with updated <code>chatbox_instructional</code> prompt structure.</li>
-            <li>Updated SQLite database management to support data pruning and session-specific context.</li>
             <li>Enhanced error handling and logging for better debugging and monitoring of emotional state changes and memory interactions.</li>
         </ul>
         <h3>Dependencies Updated:</h3>
