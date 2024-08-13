@@ -13,7 +13,7 @@
         <li><strong>Web Search Integration:</strong> Provides real-time data through web search.</li>
         <li><strong>Reinforcement Learning:</strong> Utilizes reinforcement learning to fine-tune responses based on interactions.</li>
         <li><strong>Emotion Detection:</strong> Detects and adjusts responses based on user sentiment analysis.</li>
-        <li><strong>Mood-Based Emotional Range:</strong> Can express a wide array of emotions for a more dynamic interaction based on user interaction.</li>
+        <li><strong>Mood-Based Emotional Range:</strong> Expresses a wide array of emotions based on user interactions, enhancing dynamic engagement.</li>
     </ul>
     <h2>Setup Instructions</h2>
     <ul>
