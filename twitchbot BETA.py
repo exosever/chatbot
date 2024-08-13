@@ -600,13 +600,16 @@ async def automated_response():
     while True:
         wait_time = random.randint(600, 1200)
         await asyncio.sleep(wait_time)
+        if random.randint(0, 1) == 0:
+            current_emotional_index = 9
+        elif random.randint(0, 1) == 0:
+            current_emotional_index = 8
+        elif random.randint(0, 1) == 0:
+            random_emotion = random.randint(0, 7)
+            current_emotional_index = random_emotion
         if feedback_counter > 10:
             update_parameters_based_on_feedback()
         if message_count >= 10:
-            if random.randint(0, 1) == 0:
-                current_emotional_index = 9
-            elif random.randint(0, 1) == 0:
-                current_emotional_index = 8
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
                 if channel:
