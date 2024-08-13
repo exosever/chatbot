@@ -31,7 +31,7 @@
     <br>
     <h1>Upcoming Updates and Features</h1>
     <ul>
-        <li>Upgrade from JSON database to SQLite</li>
+        <li>Upgrade from JSON database to SQLite - Currently in BETA</li>
         <li>Implement a TTS feature - Currently on HOLD</li>
         <li>Implement STT feature for streamer</li>
         <li>Integrate Wikipedia API for more knowledgable responses - DONE</li>
