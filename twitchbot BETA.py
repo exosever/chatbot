@@ -91,6 +91,85 @@ Adjust model, language, pitch, speed, etc
 
 #    return audio_file
 
+"""
+This code block establishes the parameters for the bots emotional states
+States are the emotional value, which corrospond to a description of the mood
+These values can be adjusted by a slider, by a random number, or chosen specifically
+"""
+
+emotional_states = [
+    "Angry"       # 0
+    "Sad",        # 1
+    "Nervous",    # 2
+    "Confused",   # 3
+    "Calm"        # 4
+    "Happy"       # 5
+    "Motivated",  # 6
+    "Excited"     # 7
+    "Curious"     # 8
+    "Bored"       # 9
+
+]
+
+emotional_state_descriptions = {
+    "Happy": "The bot is cheerful and friendly, using positive and uplifting language.",
+    "Sad": "The bot is empathetic and soothing, using comforting and gentle language.",
+    "Angry": "The bot is assertive and forceful, using strong and direct language.",
+    "Excited": "The bot is enthusiastic and energetic, using lively and engaging language.",
+    "Confused": "The bot is uncertain and questioning, using exploratory and clarifying language.",
+    "Bored": "The bot is indifferent and minimal, using straightforward and brief language.",
+    "Curious": "The bot is inquisitive and interested, using probing and detailed language.",
+    "Calm": "The bot is relaxed and composed, using calm and steady language.",
+    "Nervous": "The bot is anxious and hesitant, using cautious and tentative language.",
+    "Motivated": "The bot is encouraging and inspiring, using motivational and supportive language."
+}
+
+
+def get_emotional_state(index):
+
+    state = emotional_states[index]
+    return emotional_state_descriptions[state]
+
+
+"""
+This code block handles the user interaction portion
+Ranging from 0 to 7 (Angry to Excited)
+"""
+
+MIN_EMOTIONAL_INDEX = 0
+MAX_EMOTIONAL_INDEX = 7
+
+current_emotional_index = 4
+
+mood_instructions = (
+    f"{get_emotional_state(current_emotional_index)}. "
+    "The bot's responses should reflect this mood. "
+    "Please respond accordingly."
+)
+
+adjustment = 0
+
+
+def adjust_emotional_state(current_index, change):
+    global adjustment
+    adjustment += change
+    if adjustment > 3:
+        if current_index > MAX_EMOTIONAL_INDEX:
+            new_index = 4
+        new_index = max(MIN_EMOTIONAL_INDEX, min(MAX_EMOTIONAL_INDEX, current_index + change))
+    return new_index
+
+
+def adjust_emotional_state_analysis(detected_emotion):
+    global current_emotional_index
+
+    if detected_emotion in ['Angry', 'Sad', 'Fearful', 'Disgusted']:
+        current_emotional_index = adjust_emotional_state(current_emotional_index, -1)
+    elif detected_emotion in ['Happy', 'Excited', 'Surprised']:
+        current_emotional_index = adjust_emotional_state(current_emotional_index, 1)
+    elif detected_emotion in ['Neutral']:
+        current_emotional_index = adjust_emotional_state(current_emotional_index, 0)
+
 
 """
 This block handles the reinforcement learning
@@ -102,7 +181,7 @@ feedback_memory = {}
 
 
 def update_parameters_based_on_feedback():
-    global generation_config, feedback_counter
+    global generation_config, feedback_counter, current_emotional_index
 
     for feedback in feedback_memory.items():
 
@@ -111,8 +190,10 @@ def update_parameters_based_on_feedback():
 
         if feedback_ratio > 0.8:
             generation_config['temperature'] += 0.1
+            current_emotional_index = adjust_emotional_state(current_emotional_index, 1)
         else:
             generation_config['temperature'] -= 0.1
+            current_emotional_index = adjust_emotional_state(current_emotional_index, -1)
 
         generation_config['temperature'] = max(
             0.1, min(1.5, generation_config['temperature']))
@@ -215,6 +296,7 @@ Initialize the emotion detection pipeline
 """
 emotion_classifier = pipeline('sentiment-analysis', model='bhadresh-savani/distilbert-base-uncased-emotion')
 
+
 """
 Counters to keep chatbot, commands, and automated messages from spamming
 """
@@ -308,14 +390,16 @@ async def query_gemini_with_memory(user_id, prompt):
     emotion_analysis = emotion_classifier(prompt)
     detected_emotion = emotion_analysis[0]['label']
     emotion_confidence = emotion_analysis[0]['score']
+    adjust_emotional_state_analysis(detected_emotion)
 
     full_prompt = (
+        f"Here is the current emotional state of the bot: {mood_instructions}. "
+        f"\n\nThe user seems to be feeling {detected_emotion} with a confidence of {emotion_confidence:.2f}. "
+        "Please respond in a way that reflects this mood.\n\n"
         "Here is some previous data from the user to keep in mind:\n"
         f"{previous_data}\n\n"
         "This is the user's current prompt:\n"
         f"{prompt}"
-        f"\n\nThe user seems to be feeling {detected_emotion} with a confidence of {emotion_confidence:.2f}. "
-        "Please respond in a way that is sensitive to this emotion."
     )
 
     try:
@@ -511,7 +595,7 @@ based off the feedback received
 
 
 async def automated_response():
-    global message_count
+    global message_count, current_emotional_index
 
     while True:
         wait_time = random.randint(600, 1200)
@@ -519,6 +603,10 @@ async def automated_response():
         if feedback_counter > 10:
             update_parameters_based_on_feedback()
         if message_count >= 10:
+            if random.randint(0, 1) == 0:
+                current_emotional_index = 9
+            elif random.randint(0, 1) == 0:
+                current_emotional_index = 8
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
                 if channel:
