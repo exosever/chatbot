@@ -32,7 +32,7 @@
     <h1>Upcoming Updates and Features</h1>
     <ul>
         <li>Upgrade from JSON database to SQLite</li>
-        <li>Implement a TTS feature - Currently in BETA</li>
+        <li>Implement a TTS feature - Currently on HOLD</li>
         <li>Implement STT feature for streamer</li>
         <li>Integrate Wikipedia API for more knowledgable responses - DONE</li>
         <li>Integrate web search for real-time data</li>
