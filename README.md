@@ -12,7 +12,8 @@
         <li><strong>Wikipedia Integration:</strong> Accesses Wikipedia API for more knowledgeable responses.</li>
         <li><strong>Web Search Integration:</strong> Provides real-time data through web search.</li>
         <li><strong>Reinforcement Learning:</strong> Utilizes reinforcement learning to fine-tune responses based on interactions.</li>
-        <li><strong>Emotion Detection:</strong> Detects and adjusts responses based on user sentiment analysis..</li>
+        <li><strong>Emotion Detection:</strong> Detects and adjusts responses based on user sentiment analysis.</li>
+        <li><strong></strong>Mood-Based Emotional Range:</li>strong> Can express a wide array of emotions for a more dynamic interaction based on user interaction.</li>
     </ul>
     <h2>Setup Instructions</h2>
     <ul>
@@ -113,6 +114,7 @@
             <li>Implemented a mood-based system allowing the chatbot to exhibit a range of emotional states: Happy, Sad, Angry, Excited, Confused, Bored, Curious, Calm, Nervous, and Motivated.</li>
             <li>Developed slider functionality for gradual changes in emotional state, enabling smooth transitions based on user interactions.</li>
             <li>Integrated Wikipedia API to query keywords in user prompts to increase accuracy and depth of responses.</li>
+            <li>Developed an Emotion Detection model to enhance the understanding of user prompts.</li>
         </ul>
         <h3>Improvements:</h3>
         <ul>
