@@ -35,7 +35,7 @@
         <li>Implement a TTS feature - Currently on HOLD</li>
         <li>Implement STT feature for streamer</li>
         <li>Integrate Wikipedia API for more knowledgable responses - DONE</li>
-        <li>Integrate web search for real-time data</li>
+        <li>Integrate web search for real-time data - Currently in BETA</li>
         <li>Add reinforcement learning to fine-tune responses - DONE</li>
         <li>Add moods</li>
         <li>Adjust database to include full conversations - Currently in BETA</li>
