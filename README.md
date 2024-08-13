@@ -42,127 +42,98 @@
     <br>
     <br>
 <body>
-    <h1>Change Log</h1>
-    <br>
-    <div class="version">
+    <div class="container">
+        <h1>Change Log</h1>
         <h2>Version 2.0</h2>
-        <div class="section">
-            <div class="section-title">New Features:</div>
-            <ul>
-                <li>Integrated Google Gemini API for advanced AI responses.</li>
-                <li>Added automated response functionality to engage viewers after a set number of messages.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Improvements:</div>
-            <ul>
-                <li>Updated logging configuration to include timestamps and log levels for better debugging.</li>
-                <li>Replaced Hugging Face GPT-2 model with Google Gemini for more dynamic and creative responses.</li>
-                <li>Enhanced safety settings to block harmful content categories from the Google Gemini API.</li>
-                <li>Implemented automated responses that trigger when a certain number of messages are received.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Bug Fixes:</div>
-            <ul>
-                <li>Fixed issue where invalid responses from Hugging Face API were not properly handled.</li>
-                <li>Corrected handling of message prompts to improve accuracy of AI responses.</li>
-                <li>Resolved issue with bot message filtering to ensure accurate message counting.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Code Enhancements:</div>
-            <ul>
-                <li>Added detailed logging for API interactions and message processing.</li>
-                <li>Improved error handling for API request failures and message sending issues.</li>
-                <li>Updated prompt processing to handle variations in message content more effectively.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Dependencies Updated:</div>
-            <ul>
-                <li>Switched from using the Hugging Face API to Google Gemini API for natural language generation.</li>
-            </ul>
-        </div>
-    </div>
-<div class="version">
+        <h3>New Features:</h3>
+        <ul>
+            <li>Integrated Google Gemini API for advanced AI responses.</li>
+            <li>Added automated response functionality to engage viewers after a set number of messages.</li>
+        </ul>
+        <h3>Improvements:</h3>
+        <ul>
+            <li>Updated logging configuration to include timestamps and log levels for better debugging.</li>
+            <li>Replaced Hugging Face GPT-2 model with Google Gemini for more dynamic and creative responses.</li>
+            <li>Enhanced safety settings to block harmful content categories from the Google Gemini API.</li>
+            <li>Implemented automated responses that trigger after a specific number of messages.</li>
+        </ul>
+        <h3>Bug Fixes:</h3>
+        <ul>
+            <li>Fixed handling of invalid responses from Hugging Face API.</li>
+            <li>Improved accuracy of AI responses by correcting message prompt handling.</li>
+            <li>Resolved issues with bot message filtering and message counting.</li>
+        </ul>
+        <h3>Code Enhancements:</h3>
+        <ul>
+            <li>Added detailed logging for API interactions and message processing.</li>
+            <li>Improved error handling for API request failures and message sending issues.</li>
+            <li>Updated prompt processing to handle message content variations more effectively.</li>
+        </ul>
+        <h3>Dependencies Updated:</h3>
+        <ul>
+            <li>Switched from Hugging Face API to Google Gemini API for natural language generation.</li>
+        </ul>
         <h2>Version 3.0</h2>
-        <div class="section">
-            <div class="section-title">New Features:</div>
-            <ul>
-                <li>Switched to environment variables for configuration using a `.env` file.</li>
-                <li>Added support for persistent memory storage in `chatbot_memory.json` for user-specific interactions.</li>
-                <li>Implemented user-specific memory in AI responses to retain context across messages.</li>
-                <li>Integrated `dotenv` for managing environment variables securely.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Improvements:</div>
-            <ul>
-                <li>Updated the AI model's system instruction and safety settings for better performance and content moderation.</li>
-                <li>Revised message handling to include user-specific context in responses and handle bot commands.</li>
-                <li>Improved logging to include detailed information about memory interactions and API calls.</li>
-                <li>Adjusted AI response temperature for a balance between creativity and coherence.</li>
-                <li>Refined automated response logic to use updated bot name and nickname.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Bug Fixes:</div>
-            <ul>
-                <li>Resolved issues with handling environment variables and file loading errors.</li>
-                <li>Fixed problems with saving and loading persistent memory correctly.</li>
-                <li>Addressed issues with message content filtering and response accuracy.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Code Enhancements:</div>
-            <ul>
-                <li>Added support for external configuration files and environment variables for improved security and flexibility.</li>
-                <li>Introduced a more robust system for managing and utilizing persistent memory in AI interactions.</li>
-                <li>Improved the automated response system to ensure more engaging interactions with viewers.</li>
-            </ul>
-        </div>
-        <div class="section">
-            <div class="section-title">Dependencies Updated:</div>
-            <ul>
-                <li>Added `dotenv` for environment variable management.</li>
-                <li>Revised dependencies related to AI model configuration and memory handling.</li>
-            </ul>
-        </div>
+        <h3>New Features:</h3>
+        <ul>
+            <li>Switched to environment variables for configuration using a `.env` file.</li>
+            <li>Added support for persistent memory storage in <code>chatbot_memory.json</code> for user-specific interactions.</li>
+            <li>Implemented user-specific memory in AI responses to retain context across messages.</li>
+            <li>Integrated <code>dotenv</code> for managing environment variables securely.</li>
+        </ul>
+        <h3>Improvements:</h3>
+        <ul>
+            <li>Updated AI model's system instruction and safety settings for better performance and content moderation.</li>
+            <li>Revised message handling to include user-specific context and handle bot commands.</li>
+            <li>Improved logging to include detailed information about memory interactions and API calls.</li>
+            <li>Adjusted AI response temperature for a balance between creativity and coherence.</li>
+            <li>Refined automated response logic to use the updated bot name and nickname.</li>
+        </ul>
+        <h3>Bug Fixes:</h3>
+        <ul>
+            <li>Resolved issues with handling environment variables and file loading errors.</li>
+            <li>Fixed problems with saving and loading persistent memory.</li>
+            <li>Addressed issues with message content filtering and response accuracy.</li>
+        </ul>
+        <h3>Code Enhancements:</h3>
+        <ul>
+            <li>Added support for external configuration files and environment variables for improved security and flexibility.</li>
+            <li>Introduced a more robust system for managing and utilizing persistent memory in AI interactions.</li>
+            <li>Enhanced the automated response system for more engaging interactions with viewers.</li>
+        </ul>
+        <h3>Dependencies Updated:</h3>
+        <ul>
+            <li>Added <code>dotenv</code> for environment variable management.</li>
+            <li>Revised dependencies related to AI model configuration and memory handling.</li>
+        </ul>
+        <h2>Version 4.0</h2>
+        <h3>New Features:</h3>
+        <ul>
+            <li>Integrated DuckDuckGo Instant Answer API for quick and relevant search results in chatbot responses.</li>
+            <li>Implemented a mood-based system allowing the chatbot to exhibit a range of emotional states: Happy, Sad, Angry, Excited, Confused, Bored, Curious, Calm, Nervous, and Motivated.</li>
+            <li>Developed slider functionality for gradual changes in emotional state, enabling smooth transitions based on user interactions.</li>
+        </ul>
+        <h3>Improvements:</h3>
+        <ul>
+            <li>Enhanced emotional state management by integrating mood variables into the <code>chatbox_instructional</code> prompt for more nuanced interactions.</li>
+            <li>Replaced <code>chatbot_memory.json</code> with SQLite for persistent memory storage, focusing on session-specific context and pruning outdated data.</li>
+            <li>Optimized memory handling to prioritize current conversations over historical data for improved relevance and accuracy.</li>
+        </ul>
+        <h3>Bug Fixes:</h3>
+        <ul>
+            <li>Resolved issues with emotional state transitions for appropriate mood adjustments.</li>
+            <li>Fixed problems with SQLite database interactions, including data pruning and session management.</li>
+        </ul>
+        <h3>Code Enhancements:</h3>
+        <ul>
+            <li>Improved handling of mood-based responses with updated <code>chatbox_instructional</code> prompt structure.</li>
+            <li>Updated SQLite database management to support data pruning and session-specific context.</li>
+            <li>Enhanced error handling and logging for better debugging and monitoring of emotional state changes and memory interactions.</li>
+        </ul>
+        <h3>Dependencies Updated:</h3>
+        <ul>
+            <li>Integrated DuckDuckGo Instant Answer API for improved search result integration.</li>
+            <li>Revised SQLite library usage to support updated database management features.</li>
+        </ul>
     </div>
-            <h2>Version 4.0</h2>
-    <div class="section">
-            <div class="section-title">New Features:</div>
-    <ul>
-        <li><strong>Integrated DuckDuckGo Instant Answer API</strong> for quick and relevant search results in chatbot responses.</li>
-        <li><strong>Implemented mood-based system</strong> allowing the chatbot to exhibit a range of emotional states including Happy, Sad, Angry, Excited, Confused, Bored, Curious, Calm, Nervous, and Motivated. This affects how the bot adjusts its attitude in responses.</li>
-        <li><strong>Developed slider functionality</strong> for gradual changes in emotional state, enabling a smooth transition between different moods based on user interactions.</li>
-    </ul>
-    <div class="section">
-            <div class="section-title">Improvements:</div>
-    <ul>
-        <li><strong>Enhanced emotional state management</strong> by integrating mood variables into the <code>chatbox_instructional</code> prompt, allowing for more nuanced and responsive interactions.</li>
-        <li><strong>Refined SQLite integration</strong> for storing user prompts and responses, with a focus on maintaining session-specific context and pruning outdated data.</li>
-        <li><strong>Optimized memory handling</strong> to prioritize current conversations over historical data, improving the relevance and accuracy of responses.</li>
-    </ul>
-    <div class="section">
-            <div class="section-title">Bug Fixes:</div>
-    <ul>
-        <li><strong>Resolved issues with emotional state transitions</strong>, ensuring smooth and appropriate mood adjustments based on user interactions.</li>
-        <li><strong>Fixed problems with SQLite database interactions</strong>, including issues with data pruning and session management.</li>
-    </ul>
-    <div class="section">
-            <div class="section-title">Code Enhancements:</div>
-    <ul>
-        <li><strong>Improved handling of mood-based responses</strong> by updating the <code>chatbox_instructional</code> prompt structure to incorporate emotional state variables effectively.</li>
-        <li><strong>Updated SQLite database management</strong> to include features for pruning outdated data and maintaining session-specific context.</li>
-        <li><strong>Enhanced error handling and logging</strong> for better debugging and monitoring of emotional state changes and memory interactions.</li>
-    </ul>
-    <div class="section">
-            <div class="section-title">Dependencies Updated:</div>
-    <ul>
-        <li><strong>Integrated DuckDuckGo Instant Answer API</strong> for improved search result integration.</li>
-        <li><strong>Revised SQLite library usage</strong> to support updated database management features.</li>
-    </ul>
 </body>
-</html>
