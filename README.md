@@ -39,7 +39,7 @@
         <li>Add reinforcement learning to fine-tune responses - DONE</li>
         <li>Add moods</li>
         <li>Adjust database to include full conversations</li>
-        <li>Add Sentiment Analysis</li>
+        <li>Add <s>Sentiment Analysis</s> Emotion Detection - Currently in BETA</li>
         <li>Add !AI command to describe the AI and it's features - DONE</li>
     </ul>
     <br>
