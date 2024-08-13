@@ -2,18 +2,20 @@ import logging
 import asyncio
 import random
 import json
-import pygame
+# import pygame
 import wikipediaapi
 import os
 import time
 import nltk
+import requests
+from transformers import pipeline
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import google.generativeai as genai
 from twitchio.ext import commands
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
-from google.cloud import texttospeech
+# from google.cloud import texttospeech
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -28,43 +30,8 @@ TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
 genai.configure(api_key=os.getenv('GENAI_API_KEY'))
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
-                                                            'google.json')
-
-
-"""
-This block handle the Google TTS API
-Adjust model, language, pitch, speed, etc
-"""
-
-client = texttospeech.TextToSpeechClient()
-
-
-def synthesize_speech(text, pitch=13.60, speaking_rate=1.19):
-
-    input_text = texttospeech.SynthesisInput(text=text)
-
-    voice = texttospeech.VoiceSelectionParams(
-        language_code="en-US",
-        name="en-US-Neural2-I",
-    )
-
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3,
-        pitch=pitch,
-        speaking_rate=speaking_rate,
-    )
-
-    response = client.synthesize_speech(
-        input=input_text, voice=voice, audio_config=audio_config
-    )
-
-    audio_file = "output.mp3"
-
-    with open(audio_file, "wb") as out:
-        out.write(response.audio_content)
-
-    return audio_file
+# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
+#                                                            'google.json')
 
 
 """
@@ -80,7 +47,6 @@ try:
     with open("generation_config.json", "r") as config_file:
         generation_config = json.load(config_file)
 except FileNotFoundError:
-    # If the file doesn't exist, use default settings
     generation_config = {
         "temperature": 0.9,
         "top_p": 0.95,
@@ -88,6 +54,43 @@ except FileNotFoundError:
         "max_output_tokens": 8192,
         "response_mime_type": "text/plain",
     }
+    with open("generation_config.json", "w") as config_file:
+        json.dump(generation_config, config_file, indent=4)
+
+"""
+This block handle the Google TTS API
+Adjust model, language, pitch, speed, etc
+"""
+
+# client = texttospeech.TextToSpeechClient()
+
+
+# def synthesize_speech(text, pitch=13.60, speaking_rate=1.19):
+
+#    input_text = texttospeech.SynthesisInput(text=text)
+
+#    voice = texttospeech.VoiceSelectionParams(
+#        language_code="en-US",
+#        name="en-US-Neural2-I",
+#    )
+
+#    audio_config = texttospeech.AudioConfig(
+#        audio_encoding=texttospeech.AudioEncoding.MP3,
+#        pitch=pitch,
+#        speaking_rate=speaking_rate,
+#    )
+
+#    response = client.synthesize_speech(
+#        input=input_text, voice=voice, audio_config=audio_config
+#    )
+
+#    audio_file = "output.mp3"
+
+#    with open(audio_file, "wb") as out:
+#        out.write(response.audio_content)
+
+#    return audio_file
+
 
 """
 This block handles the reinforcement learning
@@ -101,7 +104,7 @@ feedback_memory = {}
 def update_parameters_based_on_feedback():
     global generation_config, feedback_counter
 
-    for user_id, feedback in feedback_memory.items():
+    for feedback in feedback_memory.items():
 
         feedback_ratio = feedback['positive'] / \
             (feedback['positive'] + feedback['negative'] + 1)
@@ -208,6 +211,11 @@ bot = commands.Bot(
 )
 
 """
+Initialize the emotion detection pipeline
+"""
+emotion_classifier = pipeline('sentiment-analysis', model='bhadresh-savani/distilbert-base-uncased-emotion')
+
+"""
 Counters to keep chatbot, commands, and automated messages from spamming
 """
 
@@ -216,6 +224,7 @@ last_message_time = None
 
 """
 Function to query the Wikipedia API
+Using keywords extrapulated from prompt
 """
 
 wiki_wiki = wikipediaapi.Wikipedia(
@@ -227,6 +236,10 @@ nltk.download('punkt')
 nltk.download('punkt_tab')
 nltk.download('stopwords')
 
+"""
+This function extracts keywords for the prompt
+"""
+
 
 def extract_keywords(query):
     stop_words = set(stopwords.words('english'))
@@ -236,13 +249,44 @@ def extract_keywords(query):
     return keywords
 
 
-async def fetch_wikipedia_summary(query):
+"""
+This code block searches wikipedia and duckduckgo APIs for relevant information
+Based on keywords extracted from prompt
+"""
+
+
+async def fetch_information(query):
     keywords = extract_keywords(query)
+    search_query = " ".join(keywords)
+
+    wikipedia_summary = None
     for keyword in keywords:
         page = wiki_wiki.page(keyword)
         if page.exists():
-            return page.summary[:1000]  # Return a limited summary
-    return "Sorry, I couldn't find relevant information."
+            wikipedia_summary = page.summary[:1000]
+            break
+
+    duckduckgo_result = None
+    try:
+        response = requests.get('https://api.duckduckgo.com/', params={
+            'q': search_query,
+            'format': 'json',
+            'no_html': 1,
+            'no_redirect': 1,
+            'skip_disambig': 1
+        })
+        data = response.json()
+        if 'AbstractText' in data and data['AbstractText']:
+            duckduckgo_result = data['AbstractText']
+        elif 'RelatedTopics' in data and data['RelatedTopics']:
+            duckduckgo_result = data['RelatedTopics'][0].get('Text', 'No information found.')
+        else:
+            pass
+
+    except Exception as e:
+        logging.error(f"Error during DuckDuckGo search: {e}")
+
+    return wikipedia_summary, duckduckgo_result
 
 
 """
@@ -258,45 +302,58 @@ async def query_gemini_with_memory(user_id, prompt):
 
     chat_session = model.start_chat(history=[])
 
-    user_memory = chatbot_memory.get(user_id, {}).get('prompts', [])
+    user_memory = chatbot_memory.get(user_id, {}).get('interactions', [])
     previous_data = "\n".join(user_memory)
+
+    emotion_analysis = emotion_classifier(prompt)
+    detected_emotion = emotion_analysis[0]['label']
+    emotion_confidence = emotion_analysis[0]['score']
 
     full_prompt = (
         "Here is some previous data from the user to keep in mind:\n"
         f"{previous_data}\n\n"
         "This is the user's current prompt:\n"
         f"{prompt}"
+        f"\n\nThe user seems to be feeling {detected_emotion} with a confidence of {emotion_confidence:.2f}. "
+        "Please respond in a way that is sensitive to this emotion."
     )
 
     try:
-        wiki_summary_task = asyncio.create_task(
-            fetch_wikipedia_summary(prompt))
-
-        wiki_summary = await wiki_summary_task
+        wiki_summary, duckduckgo_result = await fetch_information(prompt)
 
         if wiki_summary:
             full_prompt += (
                 "\n\nAdditionally, here is some related factual"
-                "information from Wikipedia:\n"
+                "information from Wikipedia to consider in your response:\n"
                 f"{wiki_summary}"
             )
 
-        response = chat_session.send_message(full_prompt)
-        generated_text = response.text.strip()
-
-        if user_id not in chatbot_memory:
-            chatbot_memory[user_id] = {'prompts': []}
-        chatbot_memory[user_id]['prompts'].append(prompt)
-
-        save_memory()
-
-        message_count = 0
-
-        return generated_text
+        if duckduckgo_result:
+            full_prompt += (
+                "\n\nHere is some additional information from the web to consider in your response:\n"
+                f"{duckduckgo_result}"
+            )
 
     except Exception as e:
         logging.error(f"Error in query processing: {e}")
         return "Sorry, I'm having trouble with the AI service right now."
+
+    response = chat_session.send_message(full_prompt)
+    generated_text = response.text.strip()
+
+    if user_id not in chatbot_memory:
+        chatbot_memory[user_id] = {'interactions': []}
+
+    chatbot_memory[user_id]['interactions'].append({
+        'prompt': prompt,
+        'response': generated_text
+    })
+
+    save_memory()
+
+    message_count = 0
+
+    return generated_text
 
 """
 Command to describe the AI to the user
@@ -306,8 +363,8 @@ Command to describe the AI to the user
 @bot.command(name='AI')
 async def ai(ctx):
     await ctx.send("I'm a bot created by @thejoshinatah! ^.^"
-                   "I am powered by Google Gemini and have the ability"
-                   "to learn and remember from our conversations!"
+                   "I make use of multiple APIs and models to generate responses!"
+                   "If you'd like to know more, check out our github https://github.com/exosever/chatbot/"
                    )
 
 """
@@ -340,43 +397,39 @@ The generated response through the Google TTS API to the chat
 """
 
 
-@bot.event()
-async def on_channel_points_redeem(redemption):
-    logging.info(f"Channel point redemption detected: {
-                 redemption.reward.title}")
-    print(f"Channel point redemption detected: {redemption.reward.title}")
+# @bot.event()
+# async def on_channel_points_redeem(redemption):
+#    logging.info(f"Channel point redemption detected: {
+#                 redemption.reward.title}")
+#    print(f"Channel point redemption detected: {redemption.reward.title}")
 
-    if redemption.reward.title == "TTS Message":
-        logging.info(f"TTS Message reward redeemed by user {
-                     redemption.user.name} ({redemption.user.id})")
-        user_message = redemption.user_input
-        logging.info(f"User message: {user_message}")
+#    if redemption.reward.title == "TTS Message":
+#        logging.info(f"TTS Message reward redeemed by user {
+#                     redemption.user.name} ({redemption.user.id})")
+#        user_message = redemption.user_input
+#        logging.info(f"User message: {user_message}")
 
-        try:
-            # Query the Gemini model with memory
-            response = await query_gemini_with_memory(str(redemption.user.id),
-                                                      user_message)
-            logging.info(f"Generated response from Gemini: {response}")
+#        try:
+#            response = await query_gemini_with_memory(str(redemption.user.id),
+#                                                      user_message)
+#            logging.info(f"Generated response from Gemini: {response}")
 
-            # Synthesize speech with the response
-            audio_file = synthesize_speech(response)
-            logging.info(f"Generated speech audio file: {audio_file}")
+#            audio_file = synthesize_speech(response)
+#            logging.info(f"Generated speech audio file: {audio_file}")
 
-            # Initialize pygame mixer
-            pygame.mixer.init()
-            pygame.mixer.music.load(audio_file)
-            pygame.mixer.music.play()
+#            pygame.mixer.init()
+#            pygame.mixer.music.load(audio_file)
+#            pygame.mixer.music.play()
 
-            logging.info("Playing audio file...")
+#            logging.info("Playing audio file...")
 
-            # Wait until the playback is finished
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(10)
+#            while pygame.mixer.music.get_busy():
+#                pygame.time.Clock().tick(10)
 
-            logging.info("Audio playback finished.")
+#            logging.info("Audio playback finished.")
 
-        except Exception as e:
-            logging.error(f"Error in TTS redemption processing: {e}")
+#        except Exception as e:
+#            logging.error(f"Error in TTS redemption processing: {e}")
 
 
 """
