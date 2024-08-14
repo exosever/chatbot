@@ -41,7 +41,7 @@
         <li>Add flags for features to turn them off/on - In progress</li>
         <li>Fix Sentiment Analysis - In progress</li>
         <li>Fix detected emotions ie; fear not Fearful - In progress</li>
-        <li>Implement feedback spam filter</li>
+        <li>Implement feedback spam filter - In progress</li>
     </ul>
     <br>
     <br>
