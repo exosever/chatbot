@@ -22,8 +22,9 @@ from dotenv import load_dotenv
 Logging Configuration
 Change from INFO to DEBUG for more detailed logging
 """
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.
+                    INFO
+                    , format='%(asctime)s - %(levelname)s - %(message)s')
 
 # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
 #                                      'google.json')
@@ -42,70 +43,70 @@ Ensure that you review and modify the values according to your needs before runn
 
 
 """
-bot_twitch_name is the name of the "BOT" twitch account.
-bot_nickname is the name the bot will respond to.
+BOT_TWITCH_NAME is the name of the "BOT" twitch account.
+BOT_NICKNAME is the name the bot will respond to.
 """
-bot_twitch_name = 'bot_twitch_name'
-bot_nickname = 'bot_nickname'
+BOT_TWITCH_NAME = 'BOT_TWITCH_NAME'
+BOT_NICKNAME = 'BOT_NICKNAME'
 
 
 """
-filter_threshold adjusts the bot's response to harmful content.
+FILTER_THRESHOLD adjusts the bot's response to harmful content.
 BLOCK_ONLY_HIGH only blocks content with a HIGH risk.
 BLOCK_ONLY_LOW only blocks content with a LOW risk.
 """
 # BLOCK_ONLY_HIGH, BLOCK_ONLY_MEDIUM, BLOCK_ONLY_LOW, BLOCK_HIGH_AND_MEDIUM,
 # BLOCK_HIGH_AND_MEDIUM_AND_LOW, BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE
-filter_threshold = HarmBlockThreshold.BLOCK_ONLY_HIGH
+FILTER_THRESHOLD = HarmBlockThreshold.BLOCK_ONLY_HIGH
 
 
 """
-bot_online_message is the message that the bot will send when it comes onine.
+BOT_ONLINE_MESSAGE is the message that the bot will send when it comes onine.
 """
-bot_online_message = 'Hello everyone! How are you all doing?'
+BOT_ONLINE_MESSAGE = 'Hello everyone! How are you all doing?'
 
 
 """
-adjustment_weight defines the amount of change required for the bot to make a single adjustment to its emotional state.
+ADJUSTMENT_WEIGHT defines the amount of change required for the bot to make a single adjustment to its emotional state.
 This is done by adding or subtracting the positive or negative stimuli until the positive or negative WEIGHT is met.
 Then a single emotional adjustment is made.
 STIMULI are either positive or negative user feedback, or positive or negative emotional analysis from user input.
 """
-adjustment_weight = 3
+ADJUSTMENT_WEIGHT = 3
 
 
 """
-feedback_threshold determines how much feedback the bot needs to receive before it updates its parameters and adjusts its emotional state.
+FEEDBACK_THRESHOLD determines how much feedback the bot needs to receive before it updates its parameters and adjusts its emotional state.
 Each feedback is treated as one stimuli towards the weight.
 But, each feedback will make a small adjustment to the AI's parameters.
 AI parameters affecty the creativity of the AI, and the diversity of its responses.
 """
-feedback_threshold = 10
+FEEDBACK_THRESHOLD = 10
 
 
 """
-feedback_time_threshold adjusts how long the bot will wait before sending it's feedback message.
+FEEDBACK_TIME_THRESHOLD adjusts how long the bot will wait before sending it's feedback message.
 """
-feedback_time_threshold = 120
+FEEDBACK_TIME_THRESHOLD = 120
 
 
 """
-automated_response_time_range adjusts how long the bot will wait before sending it's automated response.
+AUTOMATED_RESPONSE_TIME_RANGE adjusts how long the bot will wait before sending it's automated response.
 It takes a RANGE in seconds (min, max)
 This time also affects how often the bot has the chance to become bored, curious, or the low chance of a random emotion.
 """
-automated_response_time_range = random.randint(600, 1200)
+AUTOMATED_RESPONSE_TIME_RANGE = random.randint(600, 1200)
 
 
 """
-automated_message is the message the bot will send after the provided TIME_RANGE
+AUTOMATED_MESSAGE is the message the bot will send after the provided TIME_RANGE
 """
-automated_message = (
-    f"Hey There! I'm {bot_nickname}, "
+AUTOMATED_MESSAGE = (
+    f"Hey There! I'm {BOT_NICKNAME}, "
     "your friendly neighborhood racoon! "
     "Feel free to chat with me "
     "by calling my name first ^.^ "
-    f"ie: {bot_nickname}, why is Josh such a great name?"
+    f"ie: {BOT_NICKNAME}, why is Josh such a great name?"
 )
 
 
@@ -201,7 +202,7 @@ try:
     bot = commands.Bot(
         token=TWITCH_OAUTH_TOKEN,
         client_id=TWITCH_CLIENT_ID,
-        nick=bot_twitch_name,
+        nick=BOT_TWITCH_NAME,
         prefix='!',
         initial_channels=[TWITCH_CHANNEL_NAME]
     )
@@ -218,7 +219,7 @@ except Exception as e:
 try:
     wiki_wiki = wikipediaapi.Wikipedia(
         language='en',
-        user_agent=f'{bot_twitch_name} ; Python/3.x'
+        user_agent=f'{BOT_TWITCH_NAME} ; Python/3.x'
     )
 except Exception as e:
     logging.error("Failed to create wikipedia instance, error:", f"{e}")
@@ -291,9 +292,9 @@ emotional_state_descriptions = {
     "Motivated": "The bot is encouraging and inspiring, using motivational and supportive language."
 }
 
-current_emotional_index = 5
-print("Starting emotional index: " + str(current_emotional_index))
-print("Starting emotional state: " + str(emotional_states[current_emotional_index]))
+current_emotion_index = 5
+print("Starting emotional index: " + str(current_emotion_index))
+print("Starting emotional state: " + str(emotional_states[current_emotion_index]))
 
 
 def get_emotional_state(index):
@@ -312,7 +313,7 @@ MAX_EMOTIONAL_INDEX = 7
 
 
 mood_instructions = (
-    f"{get_emotional_state(current_emotional_index)}. "
+    f"{get_emotional_state(current_emotion_index)}. "
     "The bot's responses should reflect this mood. "
     "Please respond accordingly."
 )
@@ -326,7 +327,7 @@ def adjust_emotional_state(current_index, change):
     adjustment_counter += change
     print(change)
     print(adjustment_counter)
-    if adjustment_counter >= adjustment_weight or adjustment_counter <= -(adjustment_weight):
+    if adjustment_counter >= ADJUSTMENT_WEIGHT or adjustment_counter <= -(ADJUSTMENT_WEIGHT):
         if current_index > MAX_EMOTIONAL_INDEX:
             new_index = 4
             adjustment_counter = 0
@@ -353,17 +354,17 @@ def adjust_emotional_state_feedback(current_index, change):
 
 
 def adjust_emotional_state_analysis(detected_emotion):
-    global current_emotional_index
+    global current_emotion_index
 
     if detected_emotion in ['anger', 'sadness', 'fear', 'disgust']:
-        current_emotional_index = adjust_emotional_state(
-            current_emotional_index, -1)
+        current_emotion_index = adjust_emotional_state(
+            current_emotion_index, -1)
     elif detected_emotion in ['joy', 'surprise']:
-        current_emotional_index = adjust_emotional_state(
-            current_emotional_index, 1)
+        current_emotion_index = adjust_emotional_state(
+            current_emotion_index, 1)
     elif detected_emotion in ['neutral']:
-        current_emotional_index = adjust_emotional_state(
-            current_emotional_index, 0)
+        current_emotion_index = adjust_emotional_state(
+            current_emotion_index, 0)
 
 
 """
@@ -376,18 +377,18 @@ feedback_memory = []
 
 
 def update_parameters_based_on_feedback():
-    global generation_config, feedback_counter, current_emotional_index, feedback_memory
+    global generation_config, feedback_counter, current_emotion_index, feedback_memory
 
     for feedback in feedback_memory:
         print(feedback)
         if 'positive' in feedback:
             generation_config['temperature'] += 0.1
-            current_emotional_index = adjust_emotional_state(
-                current_emotional_index, 1)
+            current_emotion_index = adjust_emotional_state(
+                current_emotion_index, 1)
         else:
             generation_config['temperature'] -= 0.1
-            current_emotional_index = adjust_emotional_state(
-                current_emotional_index, -1)
+            current_emotion_index = adjust_emotional_state(
+                current_emotion_index, -1)
 
         generation_config['temperature'] = max(
             0.1, min(1.5, generation_config['temperature']))
@@ -445,13 +446,13 @@ try:
         system_instruction=str(chatbot_instructions),
         safety_settings={
             HarmCategory.HARM_CATEGORY_HATE_SPEECH:
-            filter_threshold,
+            FILTER_THRESHOLD,
             HarmCategory.HARM_CATEGORY_HARASSMENT:
-            filter_threshold,
+            FILTER_THRESHOLD,
             HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
-            filter_threshold,
+            FILTER_THRESHOLD,
             HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
-            filter_threshold,
+            FILTER_THRESHOLD,
         }
     )
 except Exception as e:
@@ -672,7 +673,7 @@ async def feedback(ctx, feedback_type):
                        "helping me do better next time!")
     feedback_counter += 1
 
-    if feedback_counter > feedback_threshold:
+    if feedback_counter > FEEDBACK_THRESHOLD:
         update_parameters_based_on_feedback()
 
 
@@ -731,7 +732,7 @@ async def event_ready():
     try:
         channel = bot.get_channel(TWITCH_CHANNEL_NAME)
         if channel:
-            await channel.send(bot_online_message)
+            await channel.send(BOT_ONLINE_MESSAGE)
             logging.info('Sent online confirmation message to chat.')
         else:
             logging.error(f"Channel {TWITCH_CHANNEL_NAME} not found.")
@@ -759,17 +760,17 @@ async def event_message(message):
         message_count += 1
 
     if (
-        message.content.lower().startswith(bot_nickname)
-        or message.content.lower().startswith(f"@{bot_twitch_name}")
+        message.content.lower().startswith(BOT_NICKNAME)
+        or message.content.lower().startswith(f"@{BOT_TWITCH_NAME}")
     ):
         user_id = str(message.author.id)
-        prompt = message.content[len(bot_nickname):].strip()
+        prompt = message.content[len(BOT_NICKNAME):].strip()
         logging.debug(f"Processed prompt: {prompt}")
         response = await query_gemini_with_memory(user_id, prompt)
         try:
             await message.channel.send(response)
 
-            if current_time - last_feedback_message_time >= feedback_time_threshold:
+            if current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD:
                 await message.channel.send(
                     'Be sure to use !feedback <good/bad> '
                     'to let me know if I did a good job!'
@@ -794,25 +795,24 @@ based off the feedback received
 
 
 async def automated_response():
-    global message_count, current_emotional_index
+    global message_count, current_emotion_index
 
     while True:
-        wait_time = random.randint(*automated_response_time_range)
+        wait_time = random.randint(*AUTOMATED_RESPONSE_TIME_RANGE)
         await asyncio.sleep(wait_time)
         if random.randint(0, 1) == 0:
-            current_emotional_index = 9
+            current_emotion_index = 9
         elif random.randint(0, 1) == 0:
-            current_emotional_index = 8
+            current_emotion_index = 8
         elif random.randint(0, 1) == 0:
             random_emotion = random.randint(0, 7)
-            current_emotional_index = random_emotion
+            current_emotion_index = random_emotion
         if message_count >= 10:
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
                 if channel:
-                    await channel.send(automated_message)
+                    await channel.send(AUTOMATED_MESSAGE)
 
-                    logging.info('Sent automated response to chat.')
                     message_count = 0
                 else:
                     logging.error(f"Channel {TWITCH_CHANNEL_NAME} not found.")
