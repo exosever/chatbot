@@ -42,7 +42,7 @@
         <li><s>Fix Sentiment Analysis - In progress</s></li>
         <li><s>Fix detected emotions ie; fear not Fearful - In progress</s></li>
         <li><s>Implement feedback spam filter - In progress</s></li>
-        <li>Removed websearch API</li>
+        <li><s>Removed websearch API</s></li>
     </ul>
     <br>
     <br>
