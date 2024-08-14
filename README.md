@@ -40,8 +40,9 @@
         <li><s>Simplify new user set-up</s></li>
         <li>Add flags for features to turn them off/on - In progress</li>
         <li><s>Fix Sentiment Analysis - In progress</s></li>
-        <li>Fix detected emotions ie; fear not Fearful - In progress</li>
+        <li><s>Fix detected emotions ie; fear not Fearful - In progress</s></li>
         <li>Implement feedback spam filter - In progress</li>
+        <li>Fix web search API</li>
     </ul>
     <br>
     <br>
