@@ -41,6 +41,7 @@
         <li>Simplify new user set-up</li>
         <li>Add flags for features to turn them off/on</li>
         <li>Fix Sentiment Analysis</li>
+        <li>Fix detected emotions ie; fear not Fearful</li>
     </ul>
     <br>
     <br>
