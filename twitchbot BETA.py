@@ -17,27 +17,89 @@ from twitchio.ext import commands
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
 
+
+"""
+Logging Configuration
+Change from INFO to DEBUG for more detailed logging
+"""
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-
 # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
-#                                           'google.json')
+#                                      'google.json')
 
+"""
+--------------------------------------------------------------------------------
+BOT CONFIGURATION
+
+Below are the main configuration settings for the bot.
+Please adjust these variables to match your preferences and setup requirements.
+
+Ensure that you review and modify the values according to your needs before running the bot.
+
+--------------------------------------------------------------------------------
+"""
+
+
+"""
+BOT_NAME is the name of the "BOT" twitch account.
+BOT_NICKNAME is the name the bot will respond to.
+"""
 BOT_NAME = 'BOT_NAME'
 BOT_NICKNAME = 'BOT_NICKNAME'
 
 
-# BLOCK_ONLY_HIGH, BLOCK_ONLY_MEDIUM, BLOCK_ONLY_LOW, BLOCK_HIGH_AND_MEDIUM, BLOCK_HIGH_AND_MEDIUM_AND_LOW, BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE
+"""
+FILTER_THRESHOLD adjusts the bot's response to harmful content.
+BLOCK_ONLY_HIGH only blocks content with a HIGH risk.
+BLOCK_ONLY_LOW only blocks content with a LOW risk.
+"""
+# BLOCK_ONLY_HIGH, BLOCK_ONLY_MEDIUM, BLOCK_ONLY_LOW, BLOCK_HIGH_AND_MEDIUM,
+# BLOCK_HIGH_AND_MEDIUM_AND_LOW, BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE
 FILTER_THRESHOLD = HarmBlockThreshold.BLOCK_ONLY_HIGH
 
+
+"""
+ONLINE_MESSAGE is the message that the bot will send when it comes onine.
+"""
 ONLINE_MESSAGE = 'Hello everyone! How are you all doing?'
 
-ADJUSTMENT_THRESHOLD = 3
+
+"""
+ADJUSTMENT_WEIGHT defines the amount of change required for the bot to make a single adjustment to its emotional state.
+This is done by adding or subtracting the positive or negative stimuli until the positive or negative WEIGHT is met.
+Then a single emotional adjustment is made.
+STIMULI are either positive or negative user feedback, or positive or negative emotional analysis from user input.
+"""
+ADJUSTMENT_WEIGHT = 3
+
+
+"""
+FEEDBACK_THRESHOLD determines how much feedback the bot needs to receive before it updates its parameters and adjusts its emotional state.
+Each feedback is treated as one stimuli towards the weight.
+But, each feedback will make a small adjustment to the AI's parameters.
+AI parameters affecty the creativity of the AI, and the diversity of its responses.
+"""
 FEEDBACK_THRESHOLD = 10
+
+
+"""
+FEEDBACK_TIME_THRESHOLD adjusts how long the bot will wait before sending it's feedback message.
+"""
 FEEDBACK_TIME_THRESHOLD = 120
 
+
+"""
+AUTOMATED_RESPONSE_TIME_RANGE adjusts how long the bot will wait before sending it's automated response.
+It takes a RANGE in seconds (min, max)
+This time also affects how often the bot has the chance to become bored, curious, or the low chance of a random emotion.
+"""
 AUTOMATED_RESPONSE_TIME_RANGE = random.randint(600, 1200)
+
+
+"""
+automated_message is the message the bot will send after the provided TIME_RANGE
+"""
 automated_message = (
     f"Hey There! I'm {BOT_NICKNAME}, "
     "your friendly neighborhood racoon! "
@@ -45,6 +107,29 @@ automated_message = (
     "by calling my name first ^.^ "
     f"ie: {BOT_NICKNAME}, why is Josh such a great name?"
 )
+
+
+"""
+--------------------------------------------------------------------------------
+FEATURE FLAGS
+
+The following flags are used to enable or disable certain features of the bot.
+Use this to tailor the bot to your needs, to free up system resources,
+or to minimize network usage.
+These flags can also assist with DEBUGGING problems, along with
+setting the LOGGING level to DEBUG.
+
+--------------------------------------------------------------------------------
+"""
+
+# Wikipedia
+# Duckduckgo
+# Emotion Detection
+# AI emotions
+# AI memory
+# AI reinforcement learning
+# Eventually TTS
+
 
 """
 --------------------------------------------------------------------------------
@@ -75,11 +160,17 @@ except FileNotFoundError:
     print("No .env detected. Chatbot_variables.env created. Please add your API keys to this file and run again.")
     exit()
 
+
 TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
-genai.configure(api_key=os.getenv('GENAI_API_KEY'))
+GENAI_API_KEY = os.getenv('GENAI_API_KEY')
 
+if not all([TWITCH_OAUTH_TOKEN, TWITCH_CLIENT_ID, TWITCH_CHANNEL_NAME, GENAI_API_KEY]):
+    print("Please verify all API keys are present in chatbot_variables.env and run again.")
+    exit()
+
+genai.configure(api_key=GENAI_API_KEY)
 
 """
 load the generation config from a JSON file
@@ -98,6 +189,7 @@ except FileNotFoundError:
         "max_output_tokens": 8192,
         "response_mime_type": "text/plain",
     }
+    print("No generation_config.json detected. Using default values.")
     with open("generation_config.json", "w") as config_file:
         json.dump(generation_config, config_file, indent=4)
 
@@ -117,16 +209,19 @@ except Exception as e:
     logging.error("Failed to create bot instance, error:", f"{e}")
     print("An error occurred while creating the bot instance. Check the log for details.")
 
-############################# The emotion classifier keeps having BIAS to fear
+try:
+    emotion_classifier = pipeline(
+        'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
+except Exception as e:
+    logging.error("Failed to create emotion classifier, error:", f"{e}")
 
-emotion_classifier = pipeline(
-    'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
-
-
-wiki_wiki = wikipediaapi.Wikipedia(
-    language='en',
-    user_agent=f'{BOT_NAME} ; Python/3.x'
-)
+try:
+    wiki_wiki = wikipediaapi.Wikipedia(
+        language='en',
+        user_agent=f'{BOT_NAME} ; Python/3.x'
+    )
+except Exception as e:
+    logging.error("Failed to create wikipedia instance, error:", f"{e}")
 
 """
 This block initializes the Google TTS API
@@ -231,12 +326,14 @@ def adjust_emotional_state(current_index, change):
     adjustment_counter += change
     print(change)
     print(adjustment_counter)
-    if adjustment_counter >= ADJUSTMENT_THRESHOLD or adjustment_counter <= -(ADJUSTMENT_THRESHOLD):
+    if adjustment_counter >= ADJUSTMENT_WEIGHT or adjustment_counter <= -(ADJUSTMENT_WEIGHT):
         if current_index > MAX_EMOTIONAL_INDEX:
             new_index = 4
+            adjustment_counter = 0
         else:
             new_index = max(MIN_EMOTIONAL_INDEX, min(
                 MAX_EMOTIONAL_INDEX, current_index + change))
+            adjustment_counter = 0
         print("new index: " + str(new_index))
         print("get new emotional states: " + str(get_emotional_state(new_index)))
         return new_index
@@ -253,9 +350,6 @@ def adjust_emotional_state_feedback(current_index, change):
     print("new feedback index: " + str(new_index))
     print("get new feedback emotional states: " + str(get_emotional_state(new_index)))
     return new_index
-
-
-#################### Detected emotion names are all wrong
 
 
 def adjust_emotional_state_analysis(detected_emotion):
@@ -332,7 +426,12 @@ try:
     with open("chatbot_instructions.txt", "r") as instructions:
         chatbot_instructions = instructions.read().strip()
 except FileNotFoundError:
-    pass
+    with open('chatbot_instruction.txt', 'w') as file:
+        file.write('')
+    print("No chatbot_instructions.txt detected. "
+          "One was created for you, "
+          "if you wish to customize your bots personality, "
+          "and instructions.")
 
 
 """
