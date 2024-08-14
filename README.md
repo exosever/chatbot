@@ -39,6 +39,7 @@
         <li>Clean up code base</li>
         <li>Additional logging/error checking</li>
         <li>Simplify new user set-up</li>
+        <li>Add flags for features to turn them off/on</li>
     </ul>
     <br>
     <br>
