@@ -38,7 +38,7 @@
         <li>Implement STT feature for streamer</li>
         <li><s>Additional logging/error checking</s></li>
         <li><s>Simplify new user set-up</s></li>
-        <li>Add flags for features to turn them off/on</li>
+        <li>Add flags for features to turn them off/on - In progress</li>
         <li>Fix Sentiment Analysis - In progress</li>
         <li>Fix detected emotions ie; fear not Fearful - In progress</li>
         <li>Implement feedback spam filter</li>
