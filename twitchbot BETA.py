@@ -123,13 +123,13 @@ setting the LOGGING level to DEBUG.
 --------------------------------------------------------------------------------
 """
 
-# Wikipedia
-# Duckduckgo
-# Emotion Detection
-# AI emotions
-# AI memory
-# AI reinforcement learning
-# Eventually TTS
+AI_WIKIPEDIA_FEATURE = True  # Wikipedia API keyword search
+AI_WEB_SEARCH_FEATURE = True  # DuckDuckGo API websearch
+AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
+AI_MOODS_FEATURE = True  # AI moods based on interactions
+AI_MEMORY_FEATURE = True  # Database storage of AI memory
+AI_LEARNING_FEATURE = True  # AI learning from user feedback
+AI_TTS_FEATURE = True  # TTS generation of AI responses
 
 
 """
