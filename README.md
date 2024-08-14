@@ -122,7 +122,7 @@
         <h3>Improvements:</h3>
         <ul>
             <li>Enhanced emotional state management by integrating mood variables into the <code>chatbox_instructional</code> prompt for more nuanced interactions.</li>
-            <li>Replaced <code>chatbot_memory.json</code> with SQLite for persistent memory storage, focusing on session-specific context and pruning outdated data.</li>
+            <li>Replaced <code>chatbot_memory.json</code> with SQLite for persistent memory storage.</li>
             <li>Optimized memory handling to prioritize current conversations over historical data for improved relevance and accuracy.</li>
         </ul>
         <h3>Bug Fixes:</h3>
