@@ -126,6 +126,8 @@ emotional_state_descriptions = {
 }
 
 current_emotional_index = 5
+print("Starting emotional index: " + str(current_emotional_index))
+print("Starting emotional state: " + str(emotional_states[current_emotional_index]))
 
 
 def get_emotional_state(index):
@@ -161,23 +163,40 @@ def adjust_emotional_state(current_index, change):
     if adjustment_counter >= 3 or adjustment_counter <= -3:
         if current_index > MAX_EMOTIONAL_INDEX:
             new_index = 4
-        new_index = max(MIN_EMOTIONAL_INDEX, min(
-            MAX_EMOTIONAL_INDEX, current_index + change))
+        else:
+            new_index = max(MIN_EMOTIONAL_INDEX, min(
+                MAX_EMOTIONAL_INDEX, current_index + change))
+        print("new index: " + str(new_index))
+        print("get new emotional states: " + str(get_emotional_state(new_index)))
         return new_index
     else:
         return current_index
 
 
+def adjust_emotional_state_feedback(current_index, change):
+    if current_index > MAX_EMOTIONAL_INDEX:
+        new_index = 4
+    else:
+        new_index = max(MIN_EMOTIONAL_INDEX, min(
+            MAX_EMOTIONAL_INDEX, current_index + change))
+    print("new feedback index: " + str(new_index))
+    print("get new feedback emotional states: " + str(get_emotional_state(new_index)))
+    return new_index
+
+
+#################### Detected emotion names are all wrong
+
+
 def adjust_emotional_state_analysis(detected_emotion):
     global current_emotional_index
 
-    if detected_emotion in ['Angry', 'Sad', 'Fearful', 'Disgusted']:
+    if detected_emotion in ['anger', 'sadness', 'fear', 'disgust']:
         current_emotional_index = adjust_emotional_state(
             current_emotional_index, -1)
-    elif detected_emotion in ['Happy', 'Excited', 'Surprised']:
+    elif detected_emotion in ['joy', 'surprise']:
         current_emotional_index = adjust_emotional_state(
             current_emotional_index, 1)
-    elif detected_emotion in ['Neutral']:
+    elif detected_emotion in ['neutral']:
         current_emotional_index = adjust_emotional_state(
             current_emotional_index, 0)
 
@@ -194,15 +213,9 @@ feedback_memory = []
 def update_parameters_based_on_feedback():
     global generation_config, feedback_counter, current_emotional_index
 
-# This accesses a tuple, User ID with a dictionary : positive and negative feedback
-# Submits the feedback as one number
-#    if feedback['positive']:
-
-# KeyError: 'positive'
-
     for feedback in feedback_memory:
         print(feedback)
-        if feedback['positive']:
+        if 'positive' in feedback:
             generation_config['temperature'] += 0.1
             current_emotional_index = adjust_emotional_state(
                 current_emotional_index, 1)
@@ -214,17 +227,17 @@ def update_parameters_based_on_feedback():
         generation_config['temperature'] = max(
             0.1, min(1.5, generation_config['temperature']))
 
-        if feedback['positive']:
+        if 'positive' in feedback:
             generation_config['top_k'] = min(
-                100, generation_config.get('top_k', 50) + 1)  # Increase top_k
+                100, generation_config.get('top_k', 50) + 1)
         else:
             generation_config['top_k'] = max(
-                1, generation_config.get('top_k', 50) - 1)  # Decrease top_k
+                1, generation_config.get('top_k', 50) - 1)
 
         generation_config['top_k'] = max(
             1, min(100, generation_config['top_k']))
 
-        if feedback['positive'] > 0.8:
+        if 'positive' in feedback:
             generation_config['top_p'] = min(
                 1.0, generation_config.get('top_p', 0.9) + 0.01)
         else:
@@ -319,9 +332,11 @@ bot = commands.Bot(
 """
 Initialize the emotion detection pipeline
 """
+
+############################# The emotion classifier keeps having BIAS to fear
+
 emotion_classifier = pipeline(
-    'sentiment-analysis', model='bhadresh-savani/distilbert-'
-                                'base-uncased-emotion')
+    'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
 
 
 """
@@ -366,6 +381,7 @@ Based on keywords extracted from prompt
 
 async def fetch_information(query):
     keywords = extract_keywords(query)
+    print("These are the extracted keywords: " + str(keywords))
     search_query = " ".join(keywords)
 
     wikipedia_summary = None
@@ -374,9 +390,12 @@ async def fetch_information(query):
             page = wiki_wiki.page(keyword)
             if page.exists():
                 wikipedia_summary = page.summary[:1000]
+                print(wikipedia_summary)
                 break
     except Exception as e:
         logging.error(f"Error during Wikipedia search: {e}")
+
+######################## Duckduckgo search is only producing errors
 
     duckduckgo_result = None
     try:
@@ -437,6 +456,7 @@ async def query_gemini_with_memory(user_id, prompt):
     )
     print(mood_instructions)
     print(detected_emotion)
+    print(emotion_confidence)
     print(prompt)
 
     try:
@@ -492,10 +512,12 @@ Simple positive or negative feedback will be used to adjust
 the parameters of the model
 """
 
+################################## Need to add system to only allow user who sent a prompt to give feedback, and only once
+
 
 @bot.command(name='feedback')
 async def feedback(ctx, feedback_type):
-    global feedback_counter
+    global feedback_counter, feedback_memory
 
     if feedback_type.lower() == 'good':
         feedback_memory.append({'positive': 1})
