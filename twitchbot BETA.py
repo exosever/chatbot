@@ -20,21 +20,65 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+
+# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
+#                                           'google.json')
+
+BOT_NAME = 'BOT_NAME'
+BOT_NICKNAME = 'BOT_NICKNAME'
+
+
+# BLOCK_ONLY_HIGH, BLOCK_ONLY_MEDIUM, BLOCK_ONLY_LOW, BLOCK_HIGH_AND_MEDIUM, BLOCK_HIGH_AND_MEDIUM_AND_LOW, BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE
+FILTER_THRESHOLD = HarmBlockThreshold.BLOCK_ONLY_HIGH
+
+ONLINE_MESSAGE = 'Hello everyone! How are you all doing?'
+
+ADJUSTMENT_THRESHOLD = 3
+FEEDBACK_THRESHOLD = 10
+FEEDBACK_TIME_THRESHOLD = 120
+
+AUTOMATED_RESPONSE_TIME_RANGE = random.randint(600, 1200)
+automated_message = (
+    f"Hey There! I'm {BOT_NICKNAME}, "
+    "your friendly neighborhood racoon! "
+    "Feel free to chat with me "
+    "by calling my name first ^.^ "
+    f"ie: {BOT_NICKNAME}, why is Josh such a great name?"
+)
+
 """
-These are the environmental variables for the API keys
-as well as the initial setup variables
+--------------------------------------------------------------------------------
+CORE FUNCTIONALITY BELOW
+
+The code below constitutes the core functionality of the bot.
+Regular users should not modify this section.
+Only make changes if you have a thorough understanding of the APIs and intend to
+alter the bot's fundamental behavior.
+
+--------------------------------------------------------------------------------
 """
 
-load_dotenv('chatbot_variables.env')
+
+"""
+These are the environmental variables for the API keys.
+All of these variables should be stored in your .env file
+"""
+
+try:
+    load_dotenv('chatbot_variables.env')
+except FileNotFoundError:
+    with open('chatbot_variables.env', 'w') as file:
+        file.write('TWITCH_OAUTH_TOKEN=AMOURANTH'
+                   'TWITCH_CLIENT_ID=DRDISRESPECT'
+                   'GENAI_API_KEY=GOOGLEISGREAT'
+                   'TWITCH_CHANNEL_NAME=bobross')
+    print("No .env detected. Chatbot_variables.env created. Please add your API keys to this file and run again.")
+    exit()
 
 TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
 genai.configure(api_key=os.getenv('GENAI_API_KEY'))
-BOT_NAME = os.getenv('BOT_NAME')
-BOT_NICKNAME = os.getenv('BOT_NICKNAME')
-# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
-#                                                            'google.json')
 
 
 """
@@ -57,9 +101,36 @@ except FileNotFoundError:
     with open("generation_config.json", "w") as config_file:
         json.dump(generation_config, config_file, indent=4)
 
+
 """
-This block handle the Google TTS API
-Adjust model, language, pitch, speed, etc
+Initialize the bot, emotion detection, and wikipedia API
+"""
+try:
+    bot = commands.Bot(
+        token=TWITCH_OAUTH_TOKEN,
+        client_id=TWITCH_CLIENT_ID,
+        nick=BOT_NAME,
+        prefix='!',
+        initial_channels=[TWITCH_CHANNEL_NAME]
+    )
+except Exception as e:
+    logging.error("Failed to create bot instance, error:", f"{e}")
+    print("An error occurred while creating the bot instance. Check the log for details.")
+
+############################# The emotion classifier keeps having BIAS to fear
+
+emotion_classifier = pipeline(
+    'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
+
+
+wiki_wiki = wikipediaapi.Wikipedia(
+    language='en',
+    user_agent=f'{BOT_NAME} ; Python/3.x'
+)
+
+"""
+This block initializes the Google TTS API
+Adjusts model, language, pitch, speed, etc
 """
 
 # client = texttospeech.TextToSpeechClient()
@@ -160,7 +231,7 @@ def adjust_emotional_state(current_index, change):
     adjustment_counter += change
     print(change)
     print(adjustment_counter)
-    if adjustment_counter >= 3 or adjustment_counter <= -3:
+    if adjustment_counter >= ADJUSTMENT_THRESHOLD or adjustment_counter <= -(ADJUSTMENT_THRESHOLD):
         if current_index > MAX_EMOTIONAL_INDEX:
             new_index = 4
         else:
@@ -254,7 +325,7 @@ def update_parameters_based_on_feedback():
 
 
 """
-Load the instructions for the bot if they exist
+Load the instructions for the bot personality if they exist
 """
 
 try:
@@ -266,29 +337,27 @@ except FileNotFoundError:
 
 """
 Model settings and paramters
-
-BLOCK_ONLY_HIGH
-BLOCK_ONLY_MEDIUM
-BLOCK_ONLY_LOW
-BLOCK_HIGH_AND_MEDIUM
-BLOCK_HIGH_AND_MEDIUM_AND_LOW
-BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE
 """
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    generation_config=generation_config,
-    system_instruction=str(chatbot_instructions),
-    safety_settings={
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH:
-        HarmBlockThreshold.BLOCK_ONLY_HIGH,
-        HarmCategory.HARM_CATEGORY_HARASSMENT:
-        HarmBlockThreshold.BLOCK_ONLY_HIGH,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
-        HarmBlockThreshold.BLOCK_ONLY_HIGH,
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
-        HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    }
-)
+try:
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config=generation_config,
+        system_instruction=str(chatbot_instructions),
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH:
+            FILTER_THRESHOLD,
+            HarmCategory.HARM_CATEGORY_HARASSMENT:
+            FILTER_THRESHOLD,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
+            FILTER_THRESHOLD,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
+            FILTER_THRESHOLD,
+        }
+    )
+except Exception as e:
+    logging.error(f"Error loading model: {e}")
+    print("Error loading model, please check logs for details.")
+
 
 """
 Load and save the persistent memory
@@ -318,50 +387,25 @@ def load_memory(user_id):
 
 
 """
-Initialize the bot
+Download keyword files if necessary
 """
 
-bot = commands.Bot(
-    token=TWITCH_OAUTH_TOKEN,
-    client_id=TWITCH_CLIENT_ID,
-    nick=BOT_NAME,
-    prefix='!',
-    initial_channels=[TWITCH_CHANNEL_NAME]
-)
 
-"""
-Initialize the emotion detection pipeline
-"""
+def download_nltk_data(resource_name, resource_url):
+    try:
+        nltk.data.find(resource_name)
+        print(f"{resource_name} is already downloaded.")
+    except LookupError:
+        print(f"{resource_name} not found. Downloading...")
+        nltk.download(resource_url)
 
-############################# The emotion classifier keeps having BIAS to fear
 
-emotion_classifier = pipeline(
-    'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
+download_nltk_data('corpora/stopwords.zip', 'stopwords')
+download_nltk_data('tokenizers/punkt.zip', 'punkt')
 
 
 """
-Counters to keep chatbot, commands, and automated messages from spamming
-"""
-
-message_count = 0
-last_message_time = None
-
-"""
-Function to query the Wikipedia API
-Using keywords extrapulated from prompt
-"""
-
-wiki_wiki = wikipediaapi.Wikipedia(
-    language='en',
-    user_agent=f'{BOT_NAME} ; Python/3.x'
-)
-
-nltk.download('punkt')
-nltk.download('punkt_tab')
-nltk.download('stopwords')
-
-"""
-This function extracts keywords for the prompt
+This function extracts keywords for the wikipedia and duckduckgo APIs
 """
 
 
@@ -427,6 +471,7 @@ It gathers historic user data if available
 It then sends the generated response to the chat
 And saves the user prompt and response to the memory
 """
+message_count = 0
 
 
 async def query_gemini_with_memory(user_id, prompt):
@@ -484,7 +529,6 @@ async def query_gemini_with_memory(user_id, prompt):
     response = chat_session.send_message(full_prompt)
     generated_text = response.text.strip()
 
-    # Update the user's memory with the new interaction
     user_memory.append({'prompt': prompt, 'response': generated_text})
     save_memory(user_id, user_memory)
 
@@ -528,7 +572,7 @@ async def feedback(ctx, feedback_type):
                        "helping me do better next time!")
     feedback_counter += 1
 
-    if feedback_counter > 10:
+    if feedback_counter > FEEDBACK_THRESHOLD:
         update_parameters_based_on_feedback()
 
 
@@ -587,9 +631,7 @@ async def event_ready():
     try:
         channel = bot.get_channel(TWITCH_CHANNEL_NAME)
         if channel:
-            await channel.send(
-                'Hello everyone! How are you all doing?'
-            )
+            await channel.send(ONLINE_MESSAGE)
             logging.info('Sent online confirmation message to chat.')
         else:
             logging.error(f"Channel {TWITCH_CHANNEL_NAME} not found.")
@@ -627,7 +669,7 @@ async def event_message(message):
         try:
             await message.channel.send(response)
 
-            if current_time - last_feedback_message_time >= 120:
+            if current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD:
                 await message.channel.send(
                     'Be sure to use !feedback <good/bad> '
                     'to let me know if I did a good job!'
@@ -655,7 +697,7 @@ async def automated_response():
     global message_count, current_emotional_index
 
     while True:
-        wait_time = random.randint(600, 1200)
+        wait_time = random.randint(*AUTOMATED_RESPONSE_TIME_RANGE)
         await asyncio.sleep(wait_time)
         if random.randint(0, 1) == 0:
             current_emotional_index = 9
@@ -668,13 +710,7 @@ async def automated_response():
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
                 if channel:
-                    await channel.send(
-                        f"Hey There! I'm {BOT_NICKNAME}, "
-                        "your friendly neighborhood racoon! "
-                        "Feel free to chat with me "
-                        "by calling my name first ^.^ "
-                        f"ie: {BOT_NICKNAME}, why is Josh such a great name?"
-                    )
+                    await channel.send(automated_message)
 
                     logging.info('Sent automated response to chat.')
                     message_count = 0
