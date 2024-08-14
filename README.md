@@ -39,8 +39,8 @@
         <li><s>Additional logging/error checking</s></li>
         <li><s>Simplify new user set-up</s></li>
         <li>Add flags for features to turn them off/on</li>
-        <li>Fix Sentiment Analysis</li>
-        <li>Fix detected emotions ie; fear not Fearful</li>
+        <li>Fix Sentiment Analysis - In progress</li>
+        <li>Fix detected emotions ie; fear not Fearful - In progress</li>
         <li>Implement feedback spam filter</li>
     </ul>
     <br>
