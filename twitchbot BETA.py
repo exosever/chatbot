@@ -4,7 +4,6 @@ import random
 import json
 import os
 import time
-import requests
 import sqlite3
 import nltk
 
@@ -119,7 +118,6 @@ setting the LOGGING level to DEBUG.
 """
 
 AI_WIKIPEDIA_FEATURE = True  # Wikipedia API keyword search
-AI_WEB_SEARCH_FEATURE = True  # DuckDuckGo API websearch
 AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
 AI_MOODS_FEATURE = True  # AI moods based on interactions
 AI_MEMORY_FEATURE = True  # Database storage of AI memory
@@ -508,8 +506,6 @@ Based on keywords extracted from prompt
 
 async def fetch_information(query):
     keywords = extract_keywords(query)
-    search_query = " ".join(keywords)
-
     wikipedia_summary = None
     try:
         for keyword in keywords:
@@ -519,31 +515,7 @@ async def fetch_information(query):
                 break
     except Exception as e:
         logging.error(f"Error during Wikipedia search: {e}")
-
-# Duckduckgo search is only producing errors
-
-    duckduckgo_result = None
-    try:
-        response = requests.get('https://api.duckduckgo.com/', params={
-            'q': search_query,
-            'format': 'json',
-            'no_html': 1,
-            'no_redirect': 1,
-            'skip_disambig': 1
-        })
-        data = response.json()
-        if 'AbstractText' in data and data['AbstractText']:
-            duckduckgo_result = data['AbstractText']
-        elif 'RelatedTopics' in data and data['RelatedTopics']:
-            duckduckgo_result = data['RelatedTopics'][0].get(
-                'Text', 'No information found.')
-        else:
-            pass
-
-    except Exception as e:
-        logging.error(f"Error during DuckDuckGo search: {e}")
-
-    return wikipedia_summary, duckduckgo_result
+    return wikipedia_summary
 
 
 """
@@ -587,20 +559,13 @@ async def query_gemini_with_memory(user_id, prompt):
     print(prompt)
 
     try:
-        wiki_summary, duckduckgo_result = await fetch_information(prompt)
+        wiki_summary = await fetch_information(prompt)
 
         if wiki_summary:
             full_prompt += (
                 "\n\nAdditionally, here is some related factual"
                 "information from Wikipedia to consider in your response:\n"
                 f"{wiki_summary}"
-            )
-
-        if duckduckgo_result:
-            full_prompt += (
-                "\n\nHere is some additional information from the"
-                "web to consider in your response:\n"
-                f"{duckduckgo_result}"
             )
 
     except Exception as e:
