@@ -42,6 +42,7 @@
         <li>Add flags for features to turn them off/on</li>
         <li>Fix Sentiment Analysis</li>
         <li>Fix detected emotions ie; fear not Fearful</li>
+        <li>Implement feedback spam filter</li>
     </ul>
     <br>
     <br>
