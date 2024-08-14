@@ -23,8 +23,7 @@ Logging Configuration
 Change from INFO to DEBUG for more detailed logging
 """
 logging.basicConfig(level=logging.
-                    INFO
-                    , format='%(asctime)s - %(levelname)s - %(message)s')
+                    INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
 #                                      'google.json')
@@ -46,8 +45,8 @@ Ensure that you review and modify the values according to your needs before runn
 BOT_TWITCH_NAME is the name of the "BOT" twitch account.
 BOT_NICKNAME is the name the bot will respond to.
 """
-BOT_TWITCH_NAME = 'BOT_TWITCH_NAME'
-BOT_NICKNAME = 'BOT_NICKNAME'
+BOT_TWITCH_NAME = 'chesterbot9000'
+BOT_NICKNAME = 'chester'
 
 
 """
@@ -67,21 +66,15 @@ BOT_ONLINE_MESSAGE = 'Hello everyone! How are you all doing?'
 
 
 """
-ADJUSTMENT_WEIGHT defines the amount of change required for the bot to make a single adjustment to its emotional state.
-This is done by adding or subtracting the positive or negative stimuli until the positive or negative WEIGHT is met.
+ADJUSTMENT_WEIGHT defines the amount of change required for the bot
+to make a single adjustment to its emotional state.
+This is done by adding or subtracting the positive or negative
+stimuli until the positive or negative WEIGHT is met.
 Then a single emotional adjustment is made.
-STIMULI are either positive or negative user feedback, or positive or negative emotional analysis from user input.
+STIMULI are either positive or negative user feedback, or positive or
+negative emotional analysis from user input.
 """
 ADJUSTMENT_WEIGHT = 3
-
-
-"""
-FEEDBACK_THRESHOLD determines how much feedback the bot needs to receive before it updates its parameters and adjusts its emotional state.
-Each feedback is treated as one stimuli towards the weight.
-But, each feedback will make a small adjustment to the AI's parameters.
-AI parameters affecty the creativity of the AI, and the diversity of its responses.
-"""
-FEEDBACK_THRESHOLD = 10
 
 
 """
@@ -91,11 +84,13 @@ FEEDBACK_TIME_THRESHOLD = 120
 
 
 """
-AUTOMATED_RESPONSE_TIME_RANGE adjusts how long the bot will wait before sending it's automated response.
+AUTOMATED_RESPONSE_TIME_RANGE adjusts how long the bot will
+wait before sending it's automated response.
 It takes a RANGE in seconds (min, max)
-This time also affects how often the bot has the chance to become bored, curious, or the low chance of a random emotion.
+This time also affects how often the bot has the chance to become bored, curious,
+or the low chance of a random emotion.
 """
-AUTOMATED_RESPONSE_TIME_RANGE = random.randint(600, 1200)
+AUTOMATED_RESPONSE_TIME_RANGE = (600, 1200)
 
 
 """
@@ -158,7 +153,8 @@ except FileNotFoundError:
                    'TWITCH_CLIENT_ID=DRDISRESPECT'
                    'GENAI_API_KEY=GOOGLEISGREAT'
                    'TWITCH_CHANNEL_NAME=bobross')
-    print("No .env detected. Chatbot_variables.env created. Please add your API keys to this file and run again.")
+    print("No .env detected. Chatbot_variables.env created. "
+          "Please add your API keys to this file and run again.")
     exit()
 
 
@@ -323,10 +319,7 @@ adjustment_counter = 0
 
 def adjust_emotional_state(current_index, change):
     global adjustment_counter
-    print(adjustment_counter)
     adjustment_counter += change
-    print(change)
-    print(adjustment_counter)
     if adjustment_counter >= ADJUSTMENT_WEIGHT or adjustment_counter <= -(ADJUSTMENT_WEIGHT):
         if current_index > MAX_EMOTIONAL_INDEX:
             new_index = 4
@@ -335,22 +328,11 @@ def adjust_emotional_state(current_index, change):
             new_index = max(MIN_EMOTIONAL_INDEX, min(
                 MAX_EMOTIONAL_INDEX, current_index + change))
             adjustment_counter = 0
-        print("new index: " + str(new_index))
-        print("get new emotional states: " + str(get_emotional_state(new_index)))
+        print("new emotional index: " + str(new_index))
+        print("new emotional state: " + str(get_emotional_state(new_index)))
         return new_index
     else:
         return current_index
-
-
-def adjust_emotional_state_feedback(current_index, change):
-    if current_index > MAX_EMOTIONAL_INDEX:
-        new_index = 4
-    else:
-        new_index = max(MIN_EMOTIONAL_INDEX, min(
-            MAX_EMOTIONAL_INDEX, current_index + change))
-    print("new feedback index: " + str(new_index))
-    print("get new feedback emotional states: " + str(get_emotional_state(new_index)))
-    return new_index
 
 
 def adjust_emotional_state_analysis(detected_emotion):
@@ -372,15 +354,14 @@ This block handles the reinforcement learning
 It takes user feedback values
 And adjusts the parameters of the model
 """
-feedback_counter = 0
+
 feedback_memory = []
 
 
 def update_parameters_based_on_feedback():
-    global generation_config, feedback_counter, current_emotion_index, feedback_memory
+    global generation_config, current_emotion_index, feedback_memory
 
     for feedback in feedback_memory:
-        print(feedback)
         if 'positive' in feedback:
             generation_config['temperature'] += 0.1
             current_emotion_index = adjust_emotional_state(
@@ -416,8 +397,9 @@ def update_parameters_based_on_feedback():
     with open("generation_config.json", "w") as config_file:
         json.dump(generation_config, config_file)
 
-    feedback_counter = 0
     feedback_memory = []
+
+    print("Feedback submitted to reainforcement learning")
 
 
 """
@@ -526,7 +508,6 @@ Based on keywords extracted from prompt
 
 async def fetch_information(query):
     keywords = extract_keywords(query)
-    print("These are the extracted keywords: " + str(keywords))
     search_query = " ".join(keywords)
 
     wikipedia_summary = None
@@ -535,12 +516,11 @@ async def fetch_information(query):
             page = wiki_wiki.page(keyword)
             if page.exists():
                 wikipedia_summary = page.summary[:1000]
-                print(wikipedia_summary)
                 break
     except Exception as e:
         logging.error(f"Error during Wikipedia search: {e}")
 
-######################## Duckduckgo search is only producing errors
+# Duckduckgo search is only producing errors
 
     duckduckgo_result = None
     try:
@@ -600,6 +580,7 @@ async def query_gemini_with_memory(user_id, prompt):
         "This is the user's current prompt:\n"
         f"{prompt}"
     )
+    print(emotional_states[current_emotion_index])
     print(mood_instructions)
     print(detected_emotion)
     print(emotion_confidence)
@@ -616,7 +597,6 @@ async def query_gemini_with_memory(user_id, prompt):
             )
 
         if duckduckgo_result:
-            print(duckduckgo_result)
             full_prompt += (
                 "\n\nHere is some additional information from the"
                 "web to consider in your response:\n"
@@ -659,7 +639,7 @@ Simple positive or negative feedback will be used to adjust
 the parameters of the model
 """
 
-################################## Need to add system to only allow user who sent a prompt to give feedback, and only once
+# Need to add system to only allow user who sent a prompt to give feedback, and only once
 
 # feedback_list_max_size = 5
 # feedback_list = []
@@ -687,10 +667,7 @@ async def feedback(ctx, feedback_type):
         feedback_memory.append({'negative': 1})
         await ctx.send("I'm sorry about that! Thanks for "
                        "helping me do better next time!")
-    feedback_counter += 1
-
-    if feedback_counter > FEEDBACK_THRESHOLD:
-        update_parameters_based_on_feedback()
+    update_parameters_based_on_feedback()
 
 
 """
@@ -776,11 +753,14 @@ async def event_message(message):
         message_count += 1
 
     if (
-        message.content.lower().startswith(BOT_NICKNAME)
-        or message.content.lower().startswith(f"@{BOT_TWITCH_NAME}")
+        message.content.lower().startswith(BOT_NICKNAME.lower())
+        or message.content.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}")
     ):
         user_id = str(message.author.id)
-        prompt = message.content[len(BOT_NICKNAME):].strip()
+        if message.content.lower().startswith(BOT_NICKNAME):
+            prompt = message.content[len(BOT_NICKNAME):].strip()
+        if message.content.lower().startswith(f"@{BOT_TWITCH_NAME}"):
+            prompt = message.content[len(f"@{BOT_TWITCH_NAME}"):].strip()
         logging.debug(f"Processed prompt: {prompt}")
         response = await query_gemini_with_memory(user_id, prompt)
         try:
