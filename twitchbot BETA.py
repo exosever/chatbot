@@ -610,7 +610,7 @@ async def query_gemini_with_memory(user_id, prompt):
     response = chat_session.send_message(full_prompt)
     generated_text = response.text.strip()
 
-    # add_feedback_user_id(user_id)
+    add_feedback_user_id(user_id)
 
     user_memory.append({'prompt': prompt, 'response': generated_text})
     save_memory(user_id, user_memory)
@@ -641,34 +641,36 @@ the parameters of the model
 
 # Need to add system to only allow user who sent a prompt to give feedback, and only once
 
-# feedback_list_max_size = 5
-# feedback_list = []
+feedback_list_max_size = 5
+feedback_list = []
 
-# def add_feedback_user_id(user_id):
-#    if len(feedback_list) >= max_size:
-#        feedback_list.pop(0)  # Remove the oldest entry if list is full
-#    feedback_list.append(user_id)
 
-# def can_give_feedback(user_id):
-#    if user_id in feedback_list:
-#        feedback_list.remove(user_id)  # Remove the first instance of the user ID
-#        return True
-#    return False
+def add_feedback_user_id(user_id):
+    if len(feedback_list) >= feedback_list_max_size:
+        feedback_list.pop(0)
+    feedback_list.append(user_id)
+
+
+def can_give_feedback(user_id):
+    if user_id in feedback_list:
+        feedback_list.remove(user_id)
+        return True
+    return False
 
 
 @bot.command(name='feedback')
 async def feedback(ctx, feedback_type):
-    global feedback_counter, feedback_memory
-    # if can_give_feedback(user_id):
-    if feedback_type.lower() == 'good':
-        feedback_memory.append({'positive': 1})
-        await ctx.send("Thank's for letting me know! ^.^")
-    elif feedback_type.lower() == 'bad':
-        feedback_memory.append({'negative': 1})
-        await ctx.send("I'm sorry about that! Thanks for "
-                       "helping me do better next time!")
-    update_parameters_based_on_feedback()
-
+    global feedback_memory
+    user_id = str(ctx.author.id)
+    if can_give_feedback(user_id):
+        if feedback_type.lower() == 'good':
+            feedback_memory.append({'positive': 1})
+            await ctx.send("Thank's for letting me know! ^.^")
+        elif feedback_type.lower() == 'bad':
+            feedback_memory.append({'negative': 1})
+            await ctx.send("I'm sorry about that! Thanks for "
+                           "helping me do better next time!")
+        update_parameters_based_on_feedback()
 
 """
 This function redeems a TTS Message channel point reward to send
@@ -757,10 +759,8 @@ async def event_message(message):
         or message.content.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}")
     ):
         user_id = str(message.author.id)
-        if message.content.lower().startswith(BOT_NICKNAME):
-            prompt = message.content[len(BOT_NICKNAME):].strip()
-        if message.content.lower().startswith(f"@{BOT_TWITCH_NAME}"):
-            prompt = message.content[len(f"@{BOT_TWITCH_NAME}"):].strip()
+        prompt = message.content.strip()
+
         logging.debug(f"Processed prompt: {prompt}")
         response = await query_gemini_with_memory(user_id, prompt)
         try:
