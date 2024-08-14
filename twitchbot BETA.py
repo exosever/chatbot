@@ -4,13 +4,7 @@ import random
 import json
 import os
 import time
-import sqlite3
-import nltk
 
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from transformers import pipeline
-import wikipediaapi
 import google.generativeai as genai
 from twitchio.ext import commands
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
@@ -117,11 +111,11 @@ setting the LOGGING level to DEBUG.
 --------------------------------------------------------------------------------
 """
 
-AI_WIKIPEDIA_FEATURE = True  # Wikipedia API keyword search
-AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
-AI_MOODS_FEATURE = True  # AI moods based on interactions
-AI_MEMORY_FEATURE = True  # Database storage of AI memory
-AI_LEARNING_FEATURE = True  # AI learning from user feedback
+AI_WIKIPEDIA_FEATURE = False  # Wikipedia API keyword search
+AI_EMOTION_DETECTION_FEATURE = False  # AI analysis of user emotions
+AI_MOODS_FEATURE = False  # AI moods based on interactions
+AI_MEMORY_FEATURE = False  # Database storage of AI memory
+AI_LEARNING_FEATURE = False  # AI learning from user feedback
 AI_TTS_FEATURE = True  # TTS generation of AI responses
 
 
@@ -204,19 +198,27 @@ except Exception as e:
     logging.error("Failed to create bot instance, error:", f"{e}")
     print("An error occurred while creating the bot instance. Check the log for details.")
 
-try:
-    emotion_classifier = pipeline(
-        'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
-except Exception as e:
-    logging.error("Failed to create emotion classifier, error:", f"{e}")
+if AI_EMOTION_DETECTION_FEATURE:
+    from transformers import pipeline
+    try:
+        emotion_classifier = pipeline(
+            'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
+    except Exception as e:
+        logging.error("Failed to create emotion classifier, error:", f"{e}")
 
-try:
-    wiki_wiki = wikipediaapi.Wikipedia(
-        language='en',
-        user_agent=f'{BOT_TWITCH_NAME} ; Python/3.x'
-    )
-except Exception as e:
-    logging.error("Failed to create wikipedia instance, error:", f"{e}")
+if AI_WIKIPEDIA_FEATURE:
+    import nltk
+    import wikipediaapi
+    from nltk.corpus import stopwords
+    from nltk.tokenize import word_tokenize
+
+    try:
+        wiki_wiki = wikipediaapi.Wikipedia(
+            language='en',
+            user_agent=f'{BOT_TWITCH_NAME} ; Python/3.x'
+        )
+    except Exception as e:
+        logging.error("Failed to create wikipedia instance, error:", f"{e}")
 
 """
 This block initializes the Google TTS API
@@ -259,36 +261,53 @@ These values can be adjusted by a slider,
 by a random number, or chosen specifically
 """
 
-emotional_states = [
-    "Angry",       # 0
-    "Sad",        # 1
-    "Nervous",    # 2
-    "Confused",   # 3
-    "Calm",        # 4
-    "Happy",       # 5
-    "Motivated",  # 6
-    "Excited",     # 7
-    "Curious",     # 8
-    "Bored",       # 9
+if AI_MOODS_FEATURE:
+    emotional_states = [
+        "Angry",       # 0
+        "Sad",        # 1
+        "Nervous",    # 2
+        "Confused",   # 3
+        "Calm",        # 4
+        "Happy",       # 5
+        "Motivated",  # 6
+        "Excited",     # 7
+        "Curious",     # 8
+        "Bored",       # 9
 
-]
+    ]
 
-emotional_state_descriptions = {
-    "Happy": "The bot is cheerful and friendly, using positive and uplifting language.",
-    "Sad": "The bot is empathetic and soothing, using comforting and gentle language.",
-    "Angry": "The bot is assertive and forceful, using strong and direct language.",
-    "Excited": "The bot is enthusiastic and energetic, using lively and engaging language.",
-    "Confused": "The bot is uncertain and questioning, using exploratory and clarifying language.",
-    "Bored": "The bot is indifferent and minimal, using straightforward and brief language.",
-    "Curious": "The bot is inquisitive and interested, using probing and detailed language.",
-    "Calm": "The bot is relaxed and composed, using calm and steady language.",
-    "Nervous": "The bot is anxious and hesitant, using cautious and tentative language.",
-    "Motivated": "The bot is encouraging and inspiring, using motivational and supportive language."
-}
+    emotional_state_descriptions = {
+        "Happy": "The bot is cheerful and friendly, using positive and uplifting language.",
+        "Sad": "The bot is empathetic and soothing, using comforting and gentle language.",
+        "Angry": (
+            "The bot is assertive and forceful, using strong and direct language."
+        ),
+        "Excited": (
+            "The bot is enthusiastic and energetic, using lively and engaging language."
+        ),
+        "Confused": (
+            "The bot is uncertain and questioning, using exploratory and clarifying language."
+        ),
+        "Bored": (
+            "The bot is indifferent and minimal, using straightforward and brief language."
+        ),
+        "Curious": (
+            "The bot is inquisitive and interested, using probing and detailed language."
+        ),
+        "Calm": (
+            "The bot is relaxed and composed, using calm and steady language."
+        ),
+        "Nervous": (
+            "The bot is anxious and hesitant, using cautious and tentative language."
+        ),
+        "Motivated": (
+            "The bot is encouraging and inspiring, using motivational and supportive language."
+        )
+    }
 
-current_emotion_index = 5
-print("Starting emotional index: " + str(current_emotion_index))
-print("Starting emotional state: " + str(emotional_states[current_emotion_index]))
+    current_emotion_index = 5
+    print("Starting emotional index: " + str(current_emotion_index))
+    print("Starting emotional state: " + str(emotional_states[current_emotion_index]))
 
 
 def get_emotional_state(index):
@@ -301,18 +320,17 @@ def get_emotional_state(index):
 This code block handles the user interaction portion
 Ranging from 0 to 7 (Angry to Excited)
 """
+if AI_MOODS_FEATURE:
+    MIN_EMOTIONAL_INDEX = 0
+    MAX_EMOTIONAL_INDEX = 7
 
-MIN_EMOTIONAL_INDEX = 0
-MAX_EMOTIONAL_INDEX = 7
+    mood_instructions = (
+        f"{get_emotional_state(current_emotion_index)}. "
+        "The bot's responses should reflect this mood. "
+        "Please respond accordingly."
+    )
 
-
-mood_instructions = (
-    f"{get_emotional_state(current_emotion_index)}. "
-    "The bot's responses should reflect this mood. "
-    "Please respond accordingly."
-)
-
-adjustment_counter = 0
+    adjustment_counter = 0
 
 
 def adjust_emotional_state(current_index, change):
@@ -444,13 +462,15 @@ except Exception as e:
 Load and save the persistent memory
 """
 
-conn = sqlite3.connect('chatbot_memory.db')
-cursor = conn.cursor()
+if AI_MEMORY_FEATURE:
+    import sqlite3
+    conn = sqlite3.connect('chatbot_memory.db')
+    cursor = conn.cursor()
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS user_memory (
-    user_id TEXT PRIMARY KEY,
-    interactions TEXT
-)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS user_memory (
+        user_id TEXT PRIMARY KEY,
+        interactions TEXT
+    )''')
 
 
 def save_memory(user_id, interactions):
@@ -481,8 +501,9 @@ def download_nltk_data(resource_name, resource_url):
         nltk.download(resource_url)
 
 
-download_nltk_data('corpora/stopwords.zip', 'stopwords')
-download_nltk_data('tokenizers/punkt.zip', 'punkt')
+if AI_WIKIPEDIA_FEATURE:
+    download_nltk_data('corpora/stopwords.zip', 'stopwords')
+    download_nltk_data('tokenizers/punkt.zip', 'punkt')
 
 
 """
@@ -531,54 +552,62 @@ async def query_gemini_with_memory(user_id, prompt):
     global message_count
 
     chat_session = model.start_chat(history=[])
-    user_memory = load_memory(user_id)
-    previous_data = "\n".join(
-        [interaction['prompt'] + " " + interaction['response']
-            for interaction in user_memory])
-
-    emotion_analysis = emotion_classifier(prompt)
-    detected_emotion = emotion_analysis[0]['label']
-    emotion_confidence = emotion_analysis[0]['score']
-    adjust_emotional_state_analysis(detected_emotion)
 
     full_prompt = (
-        f"Here is the current emotional state of the bot: {
-            mood_instructions}. "
-        "\n\nThe user seems to be feeling "
-        f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. "
-        "Please respond in a way that reflects this mood.\n\n"
-        "Here is some previous data from the user to keep in mind:\n"
-        f"{previous_data}\n\n"
         "This is the user's current prompt:\n"
-        f"{prompt}"
+        f"{prompt}\n\n"
     )
-    print(emotional_states[current_emotion_index])
-    print(mood_instructions)
-    print(detected_emotion)
-    print(emotion_confidence)
-    print(prompt)
 
-    try:
-        wiki_summary = await fetch_information(prompt)
+    if AI_MEMORY_FEATURE:
+        user_memory = load_memory(user_id)
+        previous_data = "\n".join(
+            [interaction['prompt'] + " " + interaction['response']
+                for interaction in user_memory])
+        full_prompt += ("Here is some previous data from the user to keep in mind:\n"
+                        f"{previous_data}\n\n")
 
-        if wiki_summary:
-            full_prompt += (
-                "\n\nAdditionally, here is some related factual"
-                "information from Wikipedia to consider in your response:\n"
-                f"{wiki_summary}"
-            )
+    if AI_EMOTION_DETECTION_FEATURE:
+        emotion_analysis = emotion_classifier(prompt)
+        detected_emotion = emotion_analysis[0]['label']
+        emotion_confidence = emotion_analysis[0]['score']
+        print(detected_emotion)
+        print(emotion_confidence)
+        full_prompt += (f"Here is the current emotional state of the bot: \n{
+                        mood_instructions}\n\n")
 
-    except Exception as e:
-        logging.error(f"Error in query processing: {e}")
-        return "Sorry, I'm having trouble with the AI service right now."
+        if AI_MOODS_FEATURE:
+            adjust_emotional_state_analysis(detected_emotion)
+            print(emotional_states[current_emotion_index])
+            print(mood_instructions)
+            full_prompt += ("The user seems to be feeling "
+                            f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
+                            "Please respond in a way that reflects this mood.\n\n")
+        print(prompt)
+
+    if AI_WIKIPEDIA_FEATURE:
+        try:
+            wiki_summary = await fetch_information(prompt)
+
+            if wiki_summary:
+                full_prompt += (
+                    "Additionally, here is some related factual"
+                    "information from Wikipedia to consider in your response:\n"
+                    f"{wiki_summary}\n\n"
+                )
+
+        except Exception as e:
+            logging.error(f"Error in query processing: {e}")
+            return "Sorry, I'm having trouble with the AI service right now."
 
     response = chat_session.send_message(full_prompt)
     generated_text = response.text.strip()
 
-    add_feedback_user_id(user_id)
+    if AI_LEARNING_FEATURE:
+        add_feedback_user_id(user_id)
 
-    user_memory.append({'prompt': prompt, 'response': generated_text})
-    save_memory(user_id, user_memory)
+    if AI_MEMORY_FEATURE:
+        user_memory.append({'prompt': prompt, 'response': generated_text})
+        save_memory(user_id, user_memory)
 
     message_count = 0
 
@@ -604,7 +633,6 @@ Simple positive or negative feedback will be used to adjust
 the parameters of the model
 """
 
-# Need to add system to only allow user who sent a prompt to give feedback, and only once
 
 feedback_list_max_size = 5
 feedback_list = []
@@ -623,19 +651,20 @@ def can_give_feedback(user_id):
     return False
 
 
-@bot.command(name='feedback')
-async def feedback(ctx, feedback_type):
-    global feedback_memory
-    user_id = str(ctx.author.id)
-    if can_give_feedback(user_id):
-        if feedback_type.lower() == 'good':
-            feedback_memory.append({'positive': 1})
-            await ctx.send("Thank's for letting me know! ^.^")
-        elif feedback_type.lower() == 'bad':
-            feedback_memory.append({'negative': 1})
-            await ctx.send("I'm sorry about that! Thanks for "
-                           "helping me do better next time!")
-        update_parameters_based_on_feedback()
+if AI_LEARNING_FEATURE:
+    @bot.command(name='feedback')
+    async def feedback(ctx, feedback_type):
+        global feedback_memory
+        user_id = str(ctx.author.id)
+        if can_give_feedback(user_id):
+            if feedback_type.lower() == 'good':
+                feedback_memory.append({'positive': 1})
+                await ctx.send("Thank's for letting me know! ^.^")
+            elif feedback_type.lower() == 'bad':
+                feedback_memory.append({'negative': 1})
+                await ctx.send("I'm sorry about that! Thanks for "
+                               "helping me do better next time!")
+            update_parameters_based_on_feedback()
 
 """
 This function redeems a TTS Message channel point reward to send
@@ -731,7 +760,8 @@ async def event_message(message):
         try:
             await message.channel.send(response)
 
-            if current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD:
+            if (current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD
+                    and AI_LEARNING_FEATURE):
                 await message.channel.send(
                     'Be sure to use !feedback <good/bad> '
                     'to let me know if I did a good job!'
@@ -761,13 +791,14 @@ async def automated_response():
     while True:
         wait_time = random.randint(*AUTOMATED_RESPONSE_TIME_RANGE)
         await asyncio.sleep(wait_time)
-        if random.randint(0, 1) == 0:
-            current_emotion_index = 9
-        elif random.randint(0, 1) == 0:
-            current_emotion_index = 8
-        elif random.randint(0, 1) == 0:
-            random_emotion = random.randint(0, 7)
-            current_emotion_index = random_emotion
+        if AI_MOODS_FEATURE:
+            if random.randint(0, 1) == 0:
+                current_emotion_index = 9
+            elif random.randint(0, 1) == 0:
+                current_emotion_index = 8
+            elif random.randint(0, 1) == 0:
+                random_emotion = random.randint(0, 7)
+                current_emotion_index = random_emotion
         if message_count >= 10:
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
