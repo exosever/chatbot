@@ -34,7 +34,7 @@
     <br>
     <h1>Upcoming Updates and Features</h1>
     <ul>
-        <li>Implement a TTS feature - Currently on HOLD</li>
+        <li>Implement a TTS feature - Currently in PROGRESS</li>
         <li>Implement STT feature for streamer</li>
         <li><s>Additional logging/error checking</s></li>
         <li><s>Simplify new user set-up</s></li>
