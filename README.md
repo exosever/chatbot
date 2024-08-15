@@ -67,6 +67,7 @@
         <h3>Dependencies Updated:</h3>
         <ul>
             <li>Removed DuckDuckGo API for websearch</li>
+        </ul>
         <p>---------------------------------------------------------------------------------------------------------------------------------</p>
     </details>
     <details>
