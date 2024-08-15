@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.
 
 """
 --------------------------------------------------------------------------------
-BOT CONFIGURATION
+BOT CONFIGURATION - STANDARD USERS
 
 Below are the main configuration settings for the bot.
 Please adjust these variables to match your preferences and setup requirements.
@@ -109,7 +109,7 @@ TTS_SPEAKING_RATE = 1.19
 
 """
 --------------------------------------------------------------------------------
-FEATURE FLAGS
+FEATURE FLAGS - STANDARD USERS
 
 The following flags are used to enable or disable certain features of the bot.
 Use this to tailor the bot to your needs, to free up system resources,
@@ -130,7 +130,7 @@ AI_TTS_FEATURE = True  # TTS generation of AI responses
 
 """
 --------------------------------------------------------------------------------
-CORE FUNCTIONALITY BELOW
+CORE FUNCTIONALITY BELOW - ADVANCED USERS
 
 The code below constitutes the core functionality of the bot.
 Regular users should not modify this section.
@@ -694,6 +694,18 @@ The generated response through the Google TTS API to the chat
 """
 
 
+@bot.event()
+async def event_raw_data(data):
+    print(data)
+
+CustomReward.id
+
+CustomReward.title
+
+get_redemptions()
+
+get_custom_rewards()
+
 # @bot.event()
 # async def on_channel_points_redeem(redemption):
 #    logging.info(f"Channel point redemption detected: {
@@ -756,7 +768,7 @@ async def event_ready():
 This function checks if the message is from a user
 If so, it formats the prompt to be sent to the API
 It also sends the generated response to the chat
-And only after 60 seconds sends a message asking the user to use !feedback
+And only after FEEDBACK_TIME_THRESHOLD sends a message asking the user to use !feedback
 """
 last_feedback_message_time = 0
 
@@ -800,7 +812,7 @@ async def event_message(message):
 """
 This is a loop that will send a message to chat
 after at least 10 user messages have been received
-and 10-20 minutes have passed
+and AUTOMATED_RESPONSE_TIME_RANGE minutes have passed
 
 This block also updates the parameters of the model
 based off the feedback received
