@@ -36,13 +36,6 @@
     <ul>
         <li>Implement a TTS feature - Currently in PROGRESS</li>
         <li>Implement STT feature for streamer</li>
-        <li><s>Additional logging/error checking</s></li>
-        <li><s>Simplify new user set-up</s></li>
-        <li>Add flags for features to turn them off/on - In BETA</li>
-        <li><s>Fix Sentiment Analysis - In progress</s></li>
-        <li><s>Fix detected emotions ie; fear not Fearful - In progress</s></li>
-        <li><s>Implement feedback spam filter - In progress</s></li>
-        <li><s>Removed websearch API</s></li>
     </ul>
     <br>
     <br>
@@ -140,5 +133,27 @@
             <li>Integrated DuckDuckGo Instant Answer API for improved search result integration.</li>
             <li>Revised SQLite library usage to support updated database management features.</li>
         </ul>
+        <h3>Version 4.1</h3>
+<h4>New Features:</h4>
+<ul>
+    <li>Implemented a feedback spam filter to ensure only the user who submitted a prompt can provide feedback once per prompt.</li>
+    <li>Introduced a feature flag section, allowing users to easily enable or disable specific chatbot functions.</li>
+</ul>
+<h4>Improvements:</h4>
+<ul>
+    <li>Enhanced the feedback tracker to utilize a list-based approach for storing user IDs, ensuring feedback is processed correctly and efficiently.</li>
+</ul>
+<h4>Bug Fixes:</h4>
+<ul>
+    <li>Fixed emotion detection by changing the model, no longer constantly detecting the user as angry or in fear.</li>
+    <li>Fixed an issue where the bot's emotional state could not be adjusted.</li>
+</ul>
+<h4>Code Enhancements:</h4>
+<ul>
+    <li>Refactored code to improve maintainability and readability.</li>
+    <li>Made an easy-to-use setup section for users unfamiliar with Python or the APIs.</li>
+    <li>Updated the <code>adjust_emotional_state</code> function to handle edge cases where the emotional state could exceed the predefined limits, ensuring consistent behavior.</li>
+    <li>Added more logging and error checking to improve debugging and stability.</li>
+</ul>
     </div>
 </body>
