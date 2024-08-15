@@ -34,7 +34,8 @@
     <h1>Upcoming Updates and Features</h1>
     <ul>
         <li>Implement a TTS feature - Currently in PROGRESS</li>
-        <li>Implement STT feature for streamer</li>
+        <li>Implement STT feature for streamer - Currently in PROGRESS</li>
+        <li>Add buffer/queue for TTS responses</li>
     </ul>
     <br>
     <br>
