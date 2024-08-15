@@ -64,6 +64,9 @@
             <li>Updated the <code>adjust_emotional_state</code> function to handle edge cases where the emotional state could exceed predefined limits, ensuring consistent behavior.</li>
             <li>Added more logging and error checking to improve debugging and stability.</li>
         </ul>
+        <h3>Dependencies Updated:</h3>
+        <ul>
+            <li>Removed DuckDuckGo API for websearch</li>
         <p>---------------------------------------------------------------------------------------------------------------------------------</p>
     </details>
     <details>
