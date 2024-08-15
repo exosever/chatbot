@@ -38,6 +38,7 @@
         <li>Add buffer/queue for TTS responses - Currently in BETA</li>
         <li>Handle the auto-deletion of old TTS files - Currently in BETA</lie>
         <li>Fix TTS redemptions to not require Chester at the front</li>
+        <li>Have message and audio responses for TTS queue at same time</li>
     </ul>
     <br>
     <br>
