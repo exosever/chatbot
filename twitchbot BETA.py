@@ -18,9 +18,6 @@ Change from INFO to DEBUG for more detailed logging
 logging.basicConfig(level=logging.
                     INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),
-#                                      'google.json')
-
 """
 --------------------------------------------------------------------------------
 BOT CONFIGURATION
@@ -99,6 +96,18 @@ AUTOMATED_MESSAGE = (
 
 
 """
+TTS CONFIGURATION
+Using https://cloud.google.com/text-to-speech?hl=en to find your settings
+
+"""
+
+TTS_MODEL = "en-US-Neural2-I"
+TTS_LANGUAGE = "en-US"
+TTS_PITCH = 13.60
+TTS_SPEAKING_RATE = 1.19
+
+
+"""
 --------------------------------------------------------------------------------
 FEATURE FLAGS
 
@@ -154,6 +163,16 @@ TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
 GENAI_API_KEY = os.getenv('GENAI_API_KEY')
+
+if AI_TTS_FEATURE:
+    google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+
+    if google_credentials_path:
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(), google_credentials_path)
+    else:
+        print("No Google credentials found in chatbot_variables.env.")
+        print("Please add your Google credentials to chatbot_variables.env and run again.")
+        exit()
 
 if not all([TWITCH_OAUTH_TOKEN, TWITCH_CLIENT_ID, TWITCH_CHANNEL_NAME, GENAI_API_KEY]):
     print("Please verify all API keys are present in chatbot_variables.env and run again.")
@@ -225,34 +244,37 @@ This block initializes the Google TTS API
 Adjusts model, language, pitch, speed, etc
 """
 
-# client = texttospeech.TextToSpeechClient()
+if AI_TTS_FEATURE:
+    from google.cloud import texttospeech
 
+    client = texttospeech.TextToSpeechClient()
 
-# def synthesize_speech(text, pitch=13.60, speaking_rate=1.19):
+    def synthesize_speech(text, pitch=TTS_PITCH, speaking_rate=TTS_SPEAKING_RATE):
 
-#    input_text = texttospeech.SynthesisInput(text=text)
+        input_text = texttospeech.SynthesisInput(text=text)
 
-#    voice = texttospeech.VoiceSelectionParams(
-#        language_code="en-US",
-#        name="en-US-Neural2-I",
-#    )
+        voice = texttospeech.VoiceSelectionParams(
+            language_code=TTS_LANGUAGE,
+            name=TTS_MODEL,
+        )
 
-#    audio_config = texttospeech.AudioConfig(
-#        audio_encoding=texttospeech.AudioEncoding.MP3,
-#        pitch=pitch,
-#        speaking_rate=speaking_rate,
-#    )
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3,
+            pitch=pitch,
+            speaking_rate=speaking_rate,
+        )
 
-#    response = client.synthesize_speech(
-#        input=input_text, voice=voice, audio_config=audio_config
-#    )
+        response = client.synthesize_speech(
+            input=input_text, voice=voice, audio_config=audio_config
+        )
 
-#    audio_file = "output.mp3"
+        audio_file = "AI_tts_response.mp3"
 
-#    with open(audio_file, "wb") as out:
-#        out.write(response.audio_content)
+        with open(audio_file, "wb") as out:
+            out.write(response.audio_content)
 
-#    return audio_file
+        return audio_file
+
 
 """
 This code block establishes the parameters for the bots emotional states
