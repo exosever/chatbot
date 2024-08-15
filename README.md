@@ -1,6 +1,6 @@
 <body>
     <h1>Project Overview</h1>
-    <p>This project delivers a highly customizable Twitch AI chatbot that evolves and learns from individual user interactions. Leveraging the Google Gemini 1.5 Flash model, the chatbot generates contextually aware text responses. It utilizes SQLite for storing user-submitted prompts, which enhances the chatbot’s performance and relevance over time by referencing historical data.</p>
+    <p>This project delivers a highly customizable Twitch AI chatbot that evolves and learns from individual user interactions. Powered by the Google Gemini 1.5 Flash model, the chatbot generates contextually aware text responses. It leverages SQLite for storing user-submitted prompts, allowing the chatbot to enhance its performance and relevance over time by referencing historical data.</p>
     <h2>Features</h2>
     <ul>
         <li><strong>Generative AI:</strong> Utilizes the Gemini 1.5 Flash model for generating context-aware text responses.</li>
@@ -10,7 +10,6 @@
         <li><strong>API Key Management:</strong> API keys are securely stored in a local .env file.</li>
         <li><strong>Safety Controls:</strong> Configurable safety settings to ensure appropriate content moderation.</li>
         <li><strong>Wikipedia Integration:</strong> Accesses Wikipedia API for more knowledgeable responses.</li>
-        <li><strong>Web Search Integration:</strong> Provides real-time data through web search.</li>
         <li><strong>Reinforcement Learning:</strong> Utilizes reinforcement learning to fine-tune responses based on interactions.</li>
         <li><strong>Emotion Detection:</strong> Detects and adjusts responses based on user sentiment analysis.</li>
         <li><strong>Mood-Based Emotional Range:</strong> Expresses a wide array of emotions based on user interactions, enhancing dynamic engagement.</li>
@@ -40,41 +39,72 @@
     <br>
     <br>
 <body>
-    <div class="container">
-        <h1>Change Log</h1>
-        <h2>Version 2.0</h2>
+    <h1>Change Log</h1>
+    <details open>
+        <summary><h2>Version 4.1</h2></summary>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
         <h3>New Features:</h3>
         <ul>
-            <li>Integrated Google Gemini API for advanced AI responses.</li>
-            <li>Added automated response functionality to engage viewers after a set number of messages.</li>
+            <li>Implemented a feedback spam filter to ensure only the user who submitted a prompt can provide feedback once per prompt.</li>
+            <li>Introduced a feature flag section, allowing users to easily enable or disable specific chatbot functions.</li>
         </ul>
         <h3>Improvements:</h3>
         <ul>
-            <li>Updated logging configuration to include timestamps and log levels for better debugging.</li>
-            <li>Replaced Hugging Face GPT-2 model with Google Gemini for more dynamic and creative responses.</li>
-            <li>Enhanced safety settings to block harmful content categories from the Google Gemini API.</li>
-            <li>Implemented automated responses that trigger after a specific number of messages.</li>
+            <li>Enhanced the feedback tracker to utilize a list-based approach for storing user IDs, ensuring feedback is processed correctly and efficiently.</li>
         </ul>
         <h3>Bug Fixes:</h3>
         <ul>
-            <li>Fixed handling of invalid responses from Hugging Face API.</li>
-            <li>Improved accuracy of AI responses by correcting message prompt handling.</li>
-            <li>Resolved issues with bot message filtering and message counting.</li>
+            <li>Fixed emotion detection by changing the model, so the bot no longer constantly detects the user as angry or in fear.</li>
+            <li>Resolved an issue where the bot's emotional state could not be adjusted.</li>
         </ul>
         <h3>Code Enhancements:</h3>
         <ul>
-            <li>Added detailed logging for API interactions and message processing.</li>
-            <li>Improved error handling for API request failures and message sending issues.</li>
-            <li>Updated prompt processing to handle message content variations more effectively.</li>
+            <li>Refactored code for improved maintainability and readability.</li>
+            <li>Created an easy-to-use setup section for users unfamiliar with Python or the APIs.</li>
+            <li>Updated the <code>adjust_emotional_state</code> function to handle edge cases where the emotional state could exceed predefined limits, ensuring consistent behavior.</li>
+            <li>Added more logging and error checking to improve debugging and stability.</li>
+        </ul>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+    </details>
+    <details>
+        <summary><h2>Version 4.0</h2></summary>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+        <h3>New Features:</h3>
+        <ul>
+            <li>Integrated DuckDuckGo Instant Answer API for quick and relevant search results in chatbot responses.</li>
+            <li>Implemented a mood-based system allowing the chatbot to exhibit a range of emotional states: Happy, Sad, Angry, Excited, Confused, Bored, Curious, Calm, Nervous, and Motivated.</li>
+            <li>Developed slider functionality for gradual changes in emotional state, enabling smooth transitions based on user interactions.</li>
+            <li>Integrated Wikipedia API to query keywords in user prompts to increase accuracy and depth of responses.</li>
+            <li>Developed an Emotion Detection model to enhance the understanding of user prompts.</li>
+        </ul>
+        <h3>Improvements:</h3>
+        <ul>
+            <li>Enhanced emotional state management by integrating mood variables into the <code>chatbox_instructional</code> prompt for more nuanced interactions.</li>
+            <li>Replaced <code>chatbot_memory.json</code> with SQLite for persistent memory storage.</li>
+            <li>Optimized memory handling to prioritize current conversations over historical data for improved relevance and accuracy.</li>
+        </ul>
+        <h3>Bug Fixes:</h3>
+        <ul>
+            <li>Resolved issues with emotional state transitions for appropriate mood adjustments.</li>
+        </ul>
+        <h3>Code Enhancements:</h3>
+        <ul>
+            <li>Improved handling of mood-based responses with updated <code>chatbox_instructional</code> prompt structure.</li>
+            <li>Enhanced error handling and logging for better debugging and monitoring of emotional state changes and memory interactions.</li>
         </ul>
         <h3>Dependencies Updated:</h3>
         <ul>
-            <li>Switched from Hugging Face API to Google Gemini API for natural language generation.</li>
+            <li>Integrated DuckDuckGo Instant Answer API for improved search result integration.</li>
+            <li>Revised SQLite library usage to support updated database management features.</li>
         </ul>
-        <h2>Version 3.0</h2>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+    </details>
+    <details>
+        <summary><h2>Version 3.0</h2></summary>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
         <h3>New Features:</h3>
         <ul>
-            <li>Switched to environment variables for configuration using a `.env` file.</li>
+            <li>Switched to environment variables for configuration using a <code>.env</code> file.</li>
             <li>Added support for persistent memory storage in <code>chatbot_memory.json</code> for user-specific interactions.</li>
             <li>Implemented user-specific memory in AI responses to retain context across messages.</li>
             <li>Integrated <code>dotenv</code> for managing environment variables securely.</li>
@@ -104,56 +134,39 @@
             <li>Added <code>dotenv</code> for environment variable management.</li>
             <li>Revised dependencies related to AI model configuration and memory handling.</li>
         </ul>
-        <h2>Version 4.0</h2>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+    </details>
+    <details>
+        <summary><h2>Version 2.0</h2></summary>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
         <h3>New Features:</h3>
         <ul>
-            <li>Integrated DuckDuckGo Instant Answer API for quick and relevant search results in chatbot responses.</li>
-            <li>Implemented a mood-based system allowing the chatbot to exhibit a range of emotional states: Happy, Sad, Angry, Excited, Confused, Bored, Curious, Calm, Nervous, and Motivated.</li>
-            <li>Developed slider functionality for gradual changes in emotional state, enabling smooth transitions based on user interactions.</li>
-            <li>Integrated Wikipedia API to query keywords in user prompts to increase accuracy and depth of responses.</li>
-            <li>Developed an Emotion Detection model to enhance the understanding of user prompts.</li>
+            <li>Integrated Google Gemini API for advanced AI responses.</li>
+            <li>Added automated response functionality to engage viewers after a set number of messages.</li>
         </ul>
         <h3>Improvements:</h3>
         <ul>
-            <li>Enhanced emotional state management by integrating mood variables into the <code>chatbox_instructional</code> prompt for more nuanced interactions.</li>
-            <li>Replaced <code>chatbot_memory.json</code> with SQLite for persistent memory storage.</li>
-            <li>Optimized memory handling to prioritize current conversations over historical data for improved relevance and accuracy.</li>
+            <li>Updated logging configuration to include timestamps and log levels for better debugging.</li>
+            <li>Replaced Hugging Face GPT-2 model with Google Gemini for more dynamic and creative responses.</li>
+            <li>Enhanced safety settings to block harmful content categories from the Google Gemini API.</li>
+            <li>Implemented automated responses that trigger after a specific number of messages.</li>
         </ul>
         <h3>Bug Fixes:</h3>
         <ul>
-            <li>Resolved issues with emotional state transitions for appropriate mood adjustments.</li>
+            <li>Fixed handling of invalid responses from Hugging Face API.</li>
+            <li>Improved accuracy of AI responses by correcting message prompt handling.</li>
+            <li>Resolved issues with bot message filtering and message counting.</li>
         </ul>
         <h3>Code Enhancements:</h3>
         <ul>
-            <li>Improved handling of mood-based responses with updated <code>chatbox_instructional</code> prompt structure.</li>
-            <li>Enhanced error handling and logging for better debugging and monitoring of emotional state changes and memory interactions.</li>
+            <li>Added detailed logging for API interactions and message processing.</li>
+            <li>Improved error handling for API request failures and message sending issues.</li>
+            <li>Updated prompt processing to handle message content variations more effectively.</li>
         </ul>
         <h3>Dependencies Updated:</h3>
         <ul>
-            <li>Integrated DuckDuckGo Instant Answer API for improved search result integration.</li>
-            <li>Revised SQLite library usage to support updated database management features.</li>
+            <li>Switched from Hugging Face API to Google Gemini API for natural language generation.</li>
         </ul>
-        <h3>Version 4.1</h3>
-<h4>New Features:</h4>
-<ul>
-    <li>Implemented a feedback spam filter to ensure only the user who submitted a prompt can provide feedback once per prompt.</li>
-    <li>Introduced a feature flag section, allowing users to easily enable or disable specific chatbot functions.</li>
-</ul>
-<h4>Improvements:</h4>
-<ul>
-    <li>Enhanced the feedback tracker to utilize a list-based approach for storing user IDs, ensuring feedback is processed correctly and efficiently.</li>
-</ul>
-<h4>Bug Fixes:</h4>
-<ul>
-    <li>Fixed emotion detection by changing the model, no longer constantly detecting the user as angry or in fear.</li>
-    <li>Fixed an issue where the bot's emotional state could not be adjusted.</li>
-</ul>
-<h4>Code Enhancements:</h4>
-<ul>
-    <li>Refactored code to improve maintainability and readability.</li>
-    <li>Made an easy-to-use setup section for users unfamiliar with Python or the APIs.</li>
-    <li>Updated the <code>adjust_emotional_state</code> function to handle edge cases where the emotional state could exceed the predefined limits, ensuring consistent behavior.</li>
-    <li>Added more logging and error checking to improve debugging and stability.</li>
-</ul>
-    </div>
+        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+    </details>
 </body>
