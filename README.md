@@ -42,7 +42,7 @@
     <h1>Change Log</h1>
     <details open>
         <summary><h2>Version 4.1</h2></summary>
-        <p>--------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+        <p>----------------------------------------------------------------------------------------------------------------------------------</p>
         <h3>New Features:</h3>
         <ul>
             <li>Implemented a feedback spam filter to ensure only the user who submitted a prompt can provide feedback once per prompt.</li>
