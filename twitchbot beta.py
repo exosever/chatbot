@@ -250,11 +250,14 @@ if AI_TTS_FEATURE:
     from google.cloud import texttospeech
     import pygame
     import emoji
+    from collections import deque
+
+    tts_queue = deque()
+    is_playing = False
 
     client = texttospeech.TextToSpeechClient()
 
     def synthesize_speech(text, pitch=TTS_PITCH, speaking_rate=TTS_SPEAKING_RATE):
-
         input_text = texttospeech.SynthesisInput(text=text)
 
         voice = texttospeech.VoiceSelectionParams(
@@ -272,7 +275,7 @@ if AI_TTS_FEATURE:
             input=input_text, voice=voice, audio_config=audio_config
         )
 
-        audio_file = "AI_tts_response.mp3"
+        audio_file = f"AI_tts_response_{int(time.time())}.mp3"
 
         with open(audio_file, "wb") as out:
             out.write(response.audio_content)
@@ -693,6 +696,34 @@ if AI_LEARNING_FEATURE:
             update_parameters_based_on_feedback()
 
 
+async def play_next_in_queue():
+    global is_playing
+    while tts_queue:
+
+        audio_file = tts_queue.popleft()
+        is_playing = True
+        pygame.mixer.init()
+        pygame.mixer.music.load(audio_file)
+        pygame.mixer.music.play()
+
+        logging.info(f"Playing audio file: {audio_file}")
+
+        while pygame.mixer.music.get_busy():
+            await asyncio.sleep(0.1)
+
+        logging.info("Audio playback finished.")
+
+        is_playing = False
+
+        try:
+            pygame.mixer.music.stop()
+            pygame.mixer.music.unload()
+            os.remove(audio_file)
+            logging.info(f"Removed audio file: {audio_file}")
+        except Exception as e:
+            logging.error(f"Error removing file {audio_file}: {e}")
+
+
 """
 This function checks if the message is from a user
 If so, it formats the prompt to be sent to the API
@@ -734,16 +765,11 @@ async def event_message(message):
                 clean_response = emoji.replace_emoji(response, replace='')
                 audio_file = synthesize_speech(clean_response)
                 logging.info(f"Generated speech audio file: {audio_file}")
-                pygame.mixer.init()
-                pygame.mixer.music.load(audio_file)
-                pygame.mixer.music.play()
 
-                logging.info("Playing audio file...")
+                tts_queue.append(audio_file)
 
-                while pygame.mixer.music.get_busy():
-                    pygame.time.Clock().tick(10)
-
-                logging.info("Audio playback finished.")
+                if not is_playing:
+                    await play_next_in_queue()
 
             if (current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD
                     and AI_LEARNING_FEATURE):
