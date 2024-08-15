@@ -36,7 +36,7 @@
         <li>Implement a TTS feature - Currently in BETA</li>
         <li>Implement STT feature for streamer</li>
         <li>Add buffer/queue for TTS responses - Currently in BETA</li>
-        <li>Handle the auto-deletion of old TTS files</lie>
+        <li>Handle the auto-deletion of old TTS files - Currently in BETA</lie>
     </ul>
     <br>
     <br>
