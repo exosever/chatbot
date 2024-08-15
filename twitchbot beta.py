@@ -253,6 +253,7 @@ if AI_TTS_FEATURE:
     from collections import deque
 
     tts_queue = deque()
+    tts_message_queue = deque()
     is_playing = False
 
     client = texttospeech.TextToSpeechClient()
@@ -695,29 +696,36 @@ if AI_LEARNING_FEATURE:
                                "helping me do better next time!")
             update_parameters_based_on_feedback()
 
+"""
+This code block handles all of the queueing logic of the TTS audio files
+And their respective message responses
+"""
+
 
 async def play_next_in_queue():
     global is_playing
-    while tts_queue:
 
-        audio_file = tts_queue.popleft()
-        is_playing = True
+    while tts_queue and tts_message_queue:
+        audio_file, message_to_send = tts_queue.popleft(), tts_message_queue.popleft()
+
+        if is_playing:
+            pygame.mixer.music.stop()
         pygame.mixer.init()
         pygame.mixer.music.load(audio_file)
         pygame.mixer.music.play()
+        is_playing = True
 
         logging.info(f"Playing audio file: {audio_file}")
+
+        await message_to_send.channel.send(message_to_send.content)
 
         while pygame.mixer.music.get_busy():
             await asyncio.sleep(0.1)
 
         logging.info("Audio playback finished.")
-
         is_playing = False
 
         try:
-            pygame.mixer.music.stop()
-            pygame.mixer.music.unload()
             os.remove(audio_file)
             logging.info(f"Removed audio file: {audio_file}")
         except Exception as e:
@@ -758,8 +766,6 @@ async def event_message(message):
             response = await query_gemini_with_memory(user_id, prompt)
             logging.info(f"Generated response from Gemini: {response}")
 
-            await message.channel.send(response)
-
             if (AI_TTS_FEATURE and 'custom-reward-id=16051547-8f57-4832-acb5-56df48b6e761'
                     in message.raw_data):
                 clean_response = emoji.replace_emoji(response, replace='')
@@ -767,9 +773,13 @@ async def event_message(message):
                 logging.info(f"Generated speech audio file: {audio_file}")
 
                 tts_queue.append(audio_file)
+                tts_message_queue.append(message)
 
                 if not is_playing:
                     await play_next_in_queue()
+
+            else:
+                await message.channel.send(response)
 
             if (current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD
                     and AI_LEARNING_FEATURE):
