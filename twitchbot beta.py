@@ -32,6 +32,13 @@ Ensure that you review and modify the values according to your needs before runn
 
 
 """
+AUTHORIZED_USERS_LIST is a list of USER IDs you want to be able to access admin commands from within twitch chat
+I recommend using your own user ID, or someone you trust
+"""
+
+AUTHORIZED_USERS_LIST = ['123456789', '987654321']
+
+"""
 BOT_TWITCH_NAME is the name of the "BOT" twitch account.
 BOT_NICKNAME is the name the bot will respond to.
 """
@@ -896,6 +903,54 @@ async def automated_response():
                 logging.error(f"Error sending automated message: {e}")
         else:
             logging.debug(f"Not enough messages received yet: {message_count}")
+
+
+"""
+These are bot commands to turn off and on functions from within the twitch chat
+Only authorized users can use these commands. User IDs are stored in the AUTHORIZED_USERS_LIST
+"""
+
+
+@ bot.command(name='Wikipedia')
+async def wikipedia_flag(ctx):
+    global AI_WIKIPEDIA_FEATURE
+    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+        AI_WIKIPEDIA_FEATURE = not AI_WIKIPEDIA_FEATURE
+
+
+@ bot.command(name='TTS')
+async def TTS_flag(ctx):
+    global AI_TTS_FEATURE
+    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+        AI_TTS_FEATURE = not AI_TTS_FEATURE
+
+
+@ bot.command(name='Memory')
+async def memory_flag(ctx):
+    global AI_MEMORY_FEATURE
+    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+        AI_MEMORY_FEATURE = not AI_MEMORY_FEATURE
+
+
+@ bot.command(name='Moods')
+async def moods_flag(ctx):
+    global AI_MOODS_FEATURE
+    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+        AI_MOODS_FEATURE = not AI_MOODS_FEATURE
+
+
+@ bot.command(name='Detection')
+async def emotion_detection_flag(ctx):
+    global AI_EMOTION_DETECTION_FEATURE
+    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+        AI_EMOTION_DETECTION_FEATURE = not AI_EMOTION_DETECTION_FEATURE
+
+
+@ bot.command(name='Learning')
+async def learning_flag(ctx):
+    global AI_LEARNING_FEATURE
+    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+        AI_LEARNING_FEATURE = not AI_LEARNING_FEATURE
 
 try:
     bot.run()
