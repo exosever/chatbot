@@ -125,8 +125,7 @@ AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
 AI_MOODS_FEATURE = True  # AI moods based on interactions
 AI_MEMORY_FEATURE = True  # Database storage of AI memory
 AI_LEARNING_FEATURE = True  # AI learning from user feedback
-AI_TTS_FEATURE = True  # TTS generation of AI responses
-
+AI_TTS_FEATURE = False  # TTS generation of AI responses
 
 """
 --------------------------------------------------------------------------------
@@ -146,16 +145,15 @@ These are the environmental variables for the API keys.
 All of these variables should be stored in your .env file
 """
 
-try:
-    load_dotenv('chatbot_variables.env')
-except FileNotFoundError:
+if not load_dotenv('chatbot_variables.env'):
     with open('chatbot_variables.env', 'w') as file:
-        file.write('TWITCH_OAUTH_TOKEN=AMOURANTH'
-                   'TWITCH_CLIENT_ID=DRDISRESPECT'
-                   'GENAI_API_KEY=GOOGLEISGREAT'
-                   'TWITCH_CHANNEL_NAME=bobross'
-                   'GOOGLE_APPLICATION_CREDENTIALS=SteveJobs')
-    print("No .env detected. Chatbot_variables.env created. "
+        file.write('TWITCH_OAUTH_TOKEN=\n'
+                   'TWITCH_CLIENT_ID=\n'
+                   'GENAI_API_KEY=\n'
+                   'TWITCH_CHANNEL_NAME=\n'
+                   'GOOGLE_APPLICATION_CREDENTIALS=\n')
+    print("No .env detected or file is empty. "
+          "chatbot_variables.env created. "
           "Please add your API keys to this file and run again.")
     exit()
 
@@ -191,6 +189,7 @@ If a config is not present, a default one will be created
 try:
     with open("generation_config.json", "r") as config_file:
         generation_config = json.load(config_file)
+        logging.info("generation_config.json loaded successfully.")
 except FileNotFoundError:
     generation_config = {
         "temperature": 0.9,
@@ -215,6 +214,7 @@ try:
         prefix='!',
         initial_channels=[TWITCH_CHANNEL_NAME]
     )
+    logging.info("Bot instance created successfully.")
 except Exception as e:
     logging.error("Failed to create bot instance, error:", f"{e}")
     print("An error occurred while creating the bot instance. Check the log for details.")
@@ -224,6 +224,7 @@ if AI_EMOTION_DETECTION_FEATURE:
     try:
         emotion_classifier = pipeline(
             'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
+        logging.info("Emotion classifier created successfully.")
     except Exception as e:
         logging.error("Failed to create emotion classifier, error:", f"{e}")
 
@@ -238,6 +239,7 @@ if AI_WIKIPEDIA_FEATURE:
             language='en',
             user_agent=f'{BOT_TWITCH_NAME} ; Python/3.x'
         )
+        logging.info("Wikipedia instance created successfully.")
     except Exception as e:
         logging.error("Failed to create wikipedia instance, error:", f"{e}")
 
@@ -256,6 +258,8 @@ if AI_TTS_FEATURE:
     is_playing = False
 
     client = texttospeech.TextToSpeechClient()
+
+    logging.info("Google TTS API initialized successfully.")
 
     def synthesize_speech(text, pitch=TTS_PITCH, speaking_rate=TTS_SPEAKING_RATE):
         input_text = texttospeech.SynthesisInput(text=text)
@@ -279,6 +283,7 @@ if AI_TTS_FEATURE:
 
         with open(audio_file, "wb") as out:
             out.write(response.audio_content)
+            logging.info(f"Audio content written to file: {audio_file}")
 
         return audio_file
 
@@ -335,8 +340,6 @@ if AI_MOODS_FEATURE:
     }
 
     current_emotion_index = 5
-    print("Starting emotional index: " + str(current_emotion_index))
-    print("Starting emotional state: " + str(emotional_states[current_emotion_index]))
 
 
 def get_emotional_state(index):
@@ -373,8 +376,8 @@ def adjust_emotional_state(current_index, change):
             new_index = max(MIN_EMOTIONAL_INDEX, min(
                 MAX_EMOTIONAL_INDEX, current_index + change))
             adjustment_counter = 0
-        print("new emotional index: " + str(new_index))
-        print("new emotional state: " + str(get_emotional_state(new_index)))
+            logging.info("new emotional index: " + str(new_index))
+            logging.info("new emotional state: " + str(get_emotional_state(new_index)))
         return new_index
     else:
         return current_index
@@ -409,12 +412,14 @@ def update_parameters_based_on_feedback():
     for feedback in feedback_memory:
         if 'positive' in feedback:
             generation_config['temperature'] += 0.1
-            current_emotion_index = adjust_emotional_state(
-                current_emotion_index, 1)
+            if AI_MOODS_FEATURE:
+                current_emotion_index = adjust_emotional_state(
+                    current_emotion_index, 1)
         else:
             generation_config['temperature'] -= 0.1
-            current_emotion_index = adjust_emotional_state(
-                current_emotion_index, -1)
+            if AI_MOODS_FEATURE:
+                current_emotion_index = adjust_emotional_state(
+                    current_emotion_index, -1)
 
         generation_config['temperature'] = max(
             0.1, min(1.5, generation_config['temperature']))
@@ -439,12 +444,13 @@ def update_parameters_based_on_feedback():
         generation_config['top_p'] = max(
             0.0, min(1.0, generation_config['top_p']))
 
-    with open("generation_config.json", "w") as config_file:
-        json.dump(generation_config, config_file)
+    if AI_MEMORY_FEATURE:
+        with open("generation_config.json", "w") as config_file:
+            json.dump(generation_config, config_file)
+
+    logging.info("Processed feedback")
 
     feedback_memory = []
-
-    print("Feedback submitted to reainforcement learning")
 
 
 """
@@ -454,13 +460,17 @@ Load the instructions for the bot personality if they exist
 try:
     with open("chatbot_instructions.txt", "r") as instructions:
         chatbot_instructions = instructions.read().strip()
+    logging.info("Loaded LLM instructions")
 except FileNotFoundError:
     with open('chatbot_instruction.txt', 'w') as file:
-        file.write('')
+        file.write('default instructions')
     print("No chatbot_instructions.txt detected. "
           "One was created for you, "
           "if you wish to customize your bots personality, "
           "and instructions.")
+    with open('chatbot_instruction.txt', 'r') as file:
+        chatbot_instructions = file.read().strip()
+        logging.info("Loaded LLM instructions")
 
 
 """
@@ -482,6 +492,8 @@ try:
             FILTER_THRESHOLD,
         }
     )
+    logging.info("Loaded LLM model")
+
 except Exception as e:
     logging.error(f"Error loading model: {e}")
     print("Error loading model, please check logs for details.")
@@ -495,6 +507,7 @@ if AI_MEMORY_FEATURE:
     import sqlite3
     conn = sqlite3.connect('chatbot_memory.db')
     cursor = conn.cursor()
+    logging.info("Loaded persistent memory")
 
     cursor.execute('''CREATE TABLE IF NOT EXISTS user_memory (
         user_id TEXT PRIMARY KEY,
@@ -507,12 +520,14 @@ def save_memory(user_id, interactions):
                       (user_id, interactions)
                       VALUES (?, ?)''', (user_id, json.dumps(interactions)))
     conn.commit()
+    logging.info("Saved to persistent memory")
 
 
 def load_memory(user_id):
     cursor.execute(
         'SELECT interactions FROM user_memory WHERE user_id = ?', (user_id,))
     row = cursor.fetchone()
+    logging.info("Loaded from persistent memory")
     return json.loads(row[0]) if row else []
 
 
@@ -545,6 +560,7 @@ def extract_keywords(query):
     word_tokens = word_tokenize(query)
     keywords = [word for word in word_tokens if word.isalnum()
                 and word.lower() not in stop_words]
+    logging.info(("Extracted keywords" + str(keywords)))
     return keywords
 
 
@@ -565,7 +581,7 @@ async def fetch_information(query):
                 break
     except Exception as e:
         logging.error(f"Error during Wikipedia search: {e}")
-    print(wikipedia_summary)
+    logging.info("Wikipedia summary: " + str(wikipedia_summary))
     return wikipedia_summary
 
 
@@ -591,8 +607,8 @@ async def query_gemini_with_memory(user_id, prompt):
     if AI_MEMORY_FEATURE:
         user_memory = load_memory(user_id)
         previous_data = "\n".join(
-            ['User prompt: ' + interaction['prompt'] +
-             " Generated Response:" + interaction['response']
+            ['User prompt: ' + interaction['prompt']
+             + " Generated Response:" + interaction['response']
                 for interaction in user_memory])
         full_prompt += ("Here is some previous data from the user to keep in mind:\n"
                         f"{previous_data}\n\n")
@@ -601,26 +617,21 @@ async def query_gemini_with_memory(user_id, prompt):
         emotion_analysis = emotion_classifier(prompt)
         detected_emotion = emotion_analysis[0]['label']
         emotion_confidence = emotion_analysis[0]['score']
-        print(detected_emotion)
-        print(emotion_confidence)
         full_prompt += (f"Here is the current emotional state of the bot: \n{
                         mood_instructions}\n\n")
 
-        if AI_MOODS_FEATURE:
-            adjust_emotional_state_analysis(detected_emotion)
-            print(emotional_states[current_emotion_index])
-            print(mood_instructions)
-            full_prompt += ("The user seems to be feeling "
-                            f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
-                            "Please respond in a way that reflects this mood.\n\n")
-        print(prompt)
-
-# 2024-08-15 19:57:04,841 - ERROR - Error in query processing: strip arg must be None or str
+    if AI_MOODS_FEATURE:
+        adjust_emotional_state_analysis(detected_emotion)
+        print(emotional_states[current_emotion_index])
+        print(mood_instructions)
+        full_prompt += ("The user seems to be feeling "
+                        f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
+                        "Please respond in a way that reflects this mood.\n\n")
 
     if AI_WIKIPEDIA_FEATURE:
         try:
             if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
-                prompt = prompt[len(BOT_TWITCH_NAME)+1:].strip()
+                prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
             elif prompt.lower().startswith(BOT_NICKNAME.lower()):
                 prompt = prompt[len(BOT_NICKNAME):].strip()
 
@@ -636,7 +647,9 @@ async def query_gemini_with_memory(user_id, prompt):
         except Exception as e:
             logging.error(f"Error in query processing: {e}")
             return "Sorry, I'm having trouble with the AI service right now."
-    print(full_prompt)
+
+        logging.info("Full prompt: " + full_prompt)
+
     response = chat_session.send_message(full_prompt)
     generated_text = response.text.strip()
 
@@ -656,7 +669,7 @@ Command to describe the AI to the user
 """
 
 
-@bot.command(name='AI')
+@ bot.command(name='AI')
 async def ai(ctx):
     await ctx.send("I'm a bot created by @thejoshinatah! ^.^ "
                    "I make use of multiple APIs "
@@ -690,7 +703,7 @@ def can_give_feedback(user_id):
 
 
 if AI_LEARNING_FEATURE:
-    @bot.command(name='feedback')
+    @ bot.command(name='feedback')
     async def feedback(ctx, feedback_type):
         global feedback_memory
         user_id = str(ctx.author.id)
@@ -745,7 +758,7 @@ The generated response through the Google TTS API to the chat
 last_feedback_message_time = 0
 
 
-@bot.event()
+@ bot.event()
 async def event_message(message):
     global message_count, last_feedback_message_time
 
@@ -765,7 +778,7 @@ async def event_message(message):
             response = await query_gemini_with_memory(user_id, prompt)
             logging.info(f"Generated response from Gemini: {response}")
         except Exception as e:
-            logging.error(f"Error processing message: {e}")
+            logging.error(f"Error processing message from Gemini: {e}")
 
         clean_response = emoji.replace_emoji(response, replace='')
         audio_file = synthesize_speech(clean_response)
@@ -814,7 +827,7 @@ async def event_message(message):
 
             logging.info(f"Sent response: {response}")
         except Exception as e:
-            logging.error(f"Error processing message: {e}")
+            logging.error(f"Error processing message from Gemini: {e}")
     else:
         logging.debug(f"Ignoring message: {message.content}")
 
@@ -825,7 +838,7 @@ Debug connectivity to Twitch
 """
 
 
-@bot.event()
+@ bot.event()
 async def event_ready():
     logging.info(f'Logged in as | {bot.nick}')
     logging.info(f'Connected to channel | {TWITCH_CHANNEL_NAME}')
@@ -862,17 +875,20 @@ async def automated_response():
         if AI_MOODS_FEATURE:
             if random.randint(0, 1) == 0:
                 current_emotion_index = 9
+                logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
             elif random.randint(0, 1) == 0:
                 current_emotion_index = 8
+                logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
             elif random.randint(0, 1) == 0:
                 random_emotion = random.randint(0, 7)
                 current_emotion_index = random_emotion
+                logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
         if message_count >= 10:
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
                 if channel:
                     await channel.send(AUTOMATED_MESSAGE)
-
+                    logging.info(f"Sent automated message: {AUTOMATED_MESSAGE}")
                     message_count = 0
                 else:
                     logging.error(f"Channel {TWITCH_CHANNEL_NAME} not found.")
@@ -881,6 +897,9 @@ async def automated_response():
         else:
             logging.debug(f"Not enough messages received yet: {message_count}")
 
-bot.run()
-
-# check TTS history save
+try:
+    bot.run()
+except Exception as e:
+    logging.error("Error running bot:\n"
+                  "Please check your Twitch CLIENT ID and OAUTH Keys and try again."
+                  )
