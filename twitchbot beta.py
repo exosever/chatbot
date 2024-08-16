@@ -465,9 +465,9 @@ except FileNotFoundError:
     with open('chatbot_instruction.txt', 'w') as file:
         file.write('default instructions')
     print("No chatbot_instructions.txt detected. "
-          "One was created for you, "
-          "if you wish to customize your bots personality, "
-          "and instructions.")
+          "A default set was created for you. "
+          "If you wish to customize your bots personality "
+          "and instructions, edit this file.")
     with open('chatbot_instruction.txt', 'r') as file:
         chatbot_instructions = file.read().strip()
         logging.info("Loaded LLM instructions")
@@ -899,7 +899,7 @@ async def automated_response():
 
 try:
     bot.run()
-except Exception as e:
+except AttributeError:
     logging.error("Error running bot:\n"
                   "Please check your Twitch CLIENT ID and OAUTH Keys and try again."
                   )
