@@ -45,10 +45,10 @@
         <li>Fixed error with wikipedia queries</li>
         <li>Fixed error in handling empty or non-existent .env </li>
         <li>Fixed error in creating and loading new chatbot_instructions when one is not present</li>
+        <li> To assist users, added more feedback on specific API key failures</li>
         <br>
         <li><s>Add feedback to console if a flag is set</s> - Added additional INFO level logging</li>
         <li>Have flags changeable while bot is running</li>
-        <li>To assist users, implement a system to trace which API key may be causing problems</li>
     </ul>
     <br>
     <br>
