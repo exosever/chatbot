@@ -43,6 +43,7 @@
         <li>Fixed error in memory handling, was improperly processing historical data in the full_prompt.</li>
         <li>Fixed error where AI consistently believed user was referencing it in questions</li>
         <li>Fixed error with wikipedia queries</li>
+        <li>Fixed error in handling empty or non-existent .env </li>
         <br>
         <li><s>Add feedback to console if a flag is set</s> - Added additional INFO level logging</li>
         <li>Have flags changeable while bot is running</li>
