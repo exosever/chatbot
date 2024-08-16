@@ -42,7 +42,7 @@
         <li>Have message and audio responses for TTS queue at same time - Currently in BETA</li>
         <li>Have flags changeable while bot is running - Currently in BETA</li>
         <br>
-        <li>Fixed error in memory handling, was improperly processing historical data in the full_prompt.</li>
+        <li>Fixed error in memory handling, was improperly processing historical data in the full_prompt</li>
         <li>Fixed error where AI consistently believed user was referencing it in questions</li>
         <li>Fixed error with wikipedia queries</li>
         <li>Fixed error in handling empty or non-existent .env </li>
