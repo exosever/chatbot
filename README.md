@@ -48,6 +48,7 @@
         <br>
         <li><s>Add feedback to console if a flag is set</s> - Added additional INFO level logging</li>
         <li>Have flags changeable while bot is running</li>
+        <li>To assist users, implement a system to trace which API key may be causing problems</li>
     </ul>
     <br>
     <br>
