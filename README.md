@@ -46,8 +46,8 @@
         <li>Fixed error in handling empty or non-existent .env </li>
         <li>Fixed error in creating and loading new chatbot_instructions when one is not present</li>
         <li> To assist users, added more feedback on specific API key failures</li>
+        <li>Added additional INFO level logging to not only debug issues but to observe the AI's functions</li>
         <br>
-        <li><s>Add feedback to console if a flag is set</s> - Added additional INFO level logging</li>
         <li>Have flags changeable while bot is running</li>
     </ul>
     <br>
