@@ -44,7 +44,7 @@
         <li>Fixed error where AI consistently believed user was referencing it in questions</li>
         <li>Fixed error with wikipedia queries</li>
         <br>
-        <li>Add feedback to console if a flag is set</li>
+        <li><s>Add feedback to console if a flag is set</s> - Added additional INFO level logging</li>
         <li>Have flags changeable while bot is running</li>
     </ul>
     <br>
