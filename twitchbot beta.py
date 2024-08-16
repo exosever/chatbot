@@ -104,7 +104,7 @@ Using https://cloud.google.com/text-to-speech?hl=en to find your settings
 TTS_MODEL = "en-US-Wavenet-I"
 TTS_LANGUAGE = "en-US"
 TTS_PITCH = 6.0
-TTS_SPEAKING_RATE = 1.20
+TTS_SPEAKING_RATE = 1.15
 
 
 """
@@ -565,6 +565,7 @@ async def fetch_information(query):
                 break
     except Exception as e:
         logging.error(f"Error during Wikipedia search: {e}")
+    print(wikipedia_summary)
     return wikipedia_summary
 
 
@@ -590,7 +591,8 @@ async def query_gemini_with_memory(user_id, prompt):
     if AI_MEMORY_FEATURE:
         user_memory = load_memory(user_id)
         previous_data = "\n".join(
-            [interaction['prompt'] + " " + interaction['response']
+            ['User prompt: ' + interaction['prompt'] +
+             " Generated Response:" + interaction['response']
                 for interaction in user_memory])
         full_prompt += ("Here is some previous data from the user to keep in mind:\n"
                         f"{previous_data}\n\n")
@@ -613,13 +615,20 @@ async def query_gemini_with_memory(user_id, prompt):
                             "Please respond in a way that reflects this mood.\n\n")
         print(prompt)
 
+# 2024-08-15 19:57:04,841 - ERROR - Error in query processing: strip arg must be None or str
+
     if AI_WIKIPEDIA_FEATURE:
         try:
+            if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
+                prompt = prompt[len(BOT_TWITCH_NAME)+1:].strip()
+            elif prompt.lower().startswith(BOT_NICKNAME.lower()):
+                prompt = prompt[len(BOT_NICKNAME):].strip()
+
             wiki_summary = await fetch_information(prompt)
 
             if wiki_summary:
                 full_prompt += (
-                    "Additionally, here is some related factual"
+                    "Additionally, here is some related factual "
                     "information from Wikipedia to consider in your response:\n"
                     f"{wiki_summary}\n\n"
                 )
@@ -627,7 +636,7 @@ async def query_gemini_with_memory(user_id, prompt):
         except Exception as e:
             logging.error(f"Error in query processing: {e}")
             return "Sorry, I'm having trouble with the AI service right now."
-
+    print(full_prompt)
     response = chat_session.send_message(full_prompt)
     generated_text = response.text.strip()
 
@@ -873,3 +882,5 @@ async def automated_response():
             logging.debug(f"Not enough messages received yet: {message_count}")
 
 bot.run()
+
+# check TTS history save
