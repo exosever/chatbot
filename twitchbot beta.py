@@ -474,7 +474,8 @@ except FileNotFoundError:
     print("No chatbot_instructions.txt detected. "
           "A default set was created for you. "
           "If you wish to customize your bots personality "
-          "and instructions, edit this file.")
+          "and instructions, edit this file.\n"
+          "A prompt of 100-300 words is recommended if you want an AI with an in-depth pesonality.")
     with open('chatbot_instruction.txt', 'r') as file:
         chatbot_instructions = file.read().strip()
         logging.info("Loaded LLM instructions")
