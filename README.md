@@ -39,6 +39,7 @@
         <li>Handle the auto-deletion of old TTS files - Currently in BETA</lie>
         <li>Fix TTS redemptions to not require Chester at the front - Currently in BETA</li>
         <li>Have message and audio responses for TTS queue at same time - Currently in BETA</li>
+        <li>Have flags changeable while bot is running - Currently in BETA</li>
         <br>
         <li>Fixed error in memory handling, was improperly processing historical data in the full_prompt.</li>
         <li>Fixed error where AI consistently believed user was referencing it in questions</li>
@@ -48,7 +49,7 @@
         <li> To assist users, added more feedback on specific API key failures</li>
         <li>Added additional INFO level logging to not only debug issues but to observe the AI's functions</li>
         <br>
-        <li>Have flags changeable while bot is running</li>
+        
     </ul>
     <br>
     <br>
