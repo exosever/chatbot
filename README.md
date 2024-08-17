@@ -47,9 +47,10 @@
         <li>Fixed error with wikipedia queries</li>
         <li>Fixed error in handling empty or non-existent .env </li>
         <li>Fixed error in creating and loading new chatbot_instructions when one is not present</li>
-        <li> To assist users, added more feedback on specific API key failures</li>
+        <li>To assist users, added more feedback on specific API key failures</li>
         <li>Added additional INFO level logging to not only debug issues but to observe the AI's functions</li>
         <li>Added authorized users list to access administrative commands</li>
+        <li>Added an emotional_states.txt file so user can easily customize AI emotions</li>
         <br>
     </ul>
     <br>
