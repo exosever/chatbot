@@ -52,6 +52,8 @@
         <li>Added authorized users list to access administrative commands</li>
         <li>Added an emotional_states.txt file so user can easily customize AI emotions</li>
         <br>
+        <li>Possibly redo standard-user set-up. Put all user viariables in the .env? This
+        Will make the CLI only for debugging and make it simpler to use.</li>
     </ul>
     <br>
     <br>
