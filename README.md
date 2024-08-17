@@ -51,6 +51,7 @@
         <li>Added additional INFO level logging to not only debug issues but to observe the AI's functions</li>
         <li>Added authorized users list to access administrative commands</li>
         <li>Added an emotional_states.txt file so user can easily customize AI emotions</li>
+        <li>Switched Read/Write of audio filed to a buffer</li>
         <br>
         <li>Possibly redo standard-user set-up. Put all user viariables in the .env? 
             <br>This will make the CLI only for debugging and make it simpler to use.</li>
