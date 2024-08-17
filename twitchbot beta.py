@@ -4,6 +4,7 @@ import random
 import json
 import os
 import time
+import gc
 
 import google.generativeai as genai
 from twitchio.ext import commands
@@ -32,7 +33,8 @@ Ensure that you review and modify the values according to your needs before runn
 
 
 """
-AUTHORIZED_USERS_LIST is a list of USER IDs you want to be able to access admin commands from within twitch chat
+AUTHORIZED_USERS_LIST is a list of USER IDs you want to have access
+to run admin commands from within twitch chat
 I recommend using your own user ID, or someone you trust
 """
 
@@ -111,7 +113,7 @@ Using https://cloud.google.com/text-to-speech?hl=en to find your settings
 TTS_MODEL = "en-US-Wavenet-I"
 TTS_LANGUAGE = "en-US"
 TTS_PITCH = 6.0
-TTS_SPEAKING_RATE = 1.15
+TTS_SPEAKING_RATE = 1.10
 
 
 """
@@ -132,7 +134,13 @@ AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
 AI_MOODS_FEATURE = True  # AI moods based on interactions
 AI_MEMORY_FEATURE = True  # Database storage of AI memory
 AI_LEARNING_FEATURE = True  # AI learning from user feedback
-AI_TTS_FEATURE = False  # TTS generation of AI responses
+AI_TTS_FEATURE = True  # TTS generation of AI responses
+AI_STT_FEATURE = True  # SST API for speech recognition
+
+if AI_STT_FEATURE and not AI_TTS_FEATURE:
+    print("If STT is enabled, TTS must also be enabled")
+    logging.error("If STT is enabled, TTS must also be enabled")
+    exit()
 
 """
 --------------------------------------------------------------------------------
@@ -317,34 +325,33 @@ if AI_MOODS_FEATURE:
 
     ]
 
-    emotional_state_descriptions = {
-        "Happy": "The bot is cheerful and friendly, using positive and uplifting language.",
-        "Sad": "The bot is empathetic and soothing, using comforting and gentle language.",
-        "Angry": (
-            "The bot is assertive and forceful, using strong and direct language."
-        ),
-        "Excited": (
-            "The bot is enthusiastic and energetic, using lively and engaging language."
-        ),
-        "Confused": (
-            "The bot is uncertain and questioning, using exploratory and clarifying language."
-        ),
-        "Bored": (
-            "The bot is indifferent and minimal, using straightforward and brief language."
-        ),
-        "Curious": (
-            "The bot is inquisitive and interested, using probing and detailed language."
-        ),
-        "Calm": (
-            "The bot is relaxed and composed, using calm and steady language."
-        ),
-        "Nervous": (
-            "The bot is anxious and hesitant, using cautious and tentative language."
-        ),
-        "Motivated": (
-            "The bot is encouraging and inspiring, using motivational and supportive language."
-        )
-    }
+    try:
+        with open("emotional_states.txt", "r") as file:
+            emotional_state_descriptions = json.load(file)
+        logging.info("Loaded Emotional States instructions")
+    except FileNotFoundError:
+        default_states = {
+            "Happy": "The bot is cheerful and friendly, using positive and uplifting language.",
+            "Sad": "The bot is empathetic and soothing, using comforting and gentle language.",
+            "Angry": "The bot is assertive and forceful, using strong and direct language.",
+            "Excited": "The bot is enthusiastic and energetic, using lively and engaging language.",
+            "Confused": "The bot is uncertain and questioning, using exploratory and clarifying language.",
+            "Bored": "The bot is indifferent and minimal, using straightforward and brief language.",
+            "Curious": "The bot is inquisitive and interested, using probing and detailed language.",
+            "Calm": "The bot is relaxed and composed, using calm and steady language.",
+            "Nervous": "The bot is anxious and hesitant, using cautious and tentative language.",
+            "Motivated": "The bot is encouraging and inspiring, using motivational and supportive language."
+        }
+
+        with open('emotional_states.txt', 'w') as file:
+            json.dump(default_states, file, indent=4)
+
+        print("No emotional_states.txt detected. A default one was created for you. "
+              "You can customize your bot's moods by editing this file.")
+
+        with open('emotional_states.txt', 'r') as file:
+            emotional_state_descriptions = json.load(file)
+        logging.info("Loaded Emotional States instructions")
 
     current_emotion_index = 5
 
@@ -352,6 +359,7 @@ if AI_MOODS_FEATURE:
 def get_emotional_state(index):
 
     state = emotional_states[index]
+    logging.info("Current emotional state: " + str(emotional_state_descriptions[state]))
     return emotional_state_descriptions[state]
 
 
@@ -513,7 +521,7 @@ Load and save the persistent memory
 
 if AI_MEMORY_FEATURE:
     import sqlite3
-    conn = sqlite3.connect('chatbot_memory.db')
+    conn = sqlite3.connect('chatbot_memory.db', check_same_thread=False)
     cursor = conn.cursor()
     logging.info("Loaded persistent memory")
 
@@ -568,6 +576,17 @@ def extract_keywords(query):
     word_tokens = word_tokenize(query)
     keywords = [word for word in word_tokens if word.isalnum()
                 and word.lower() not in stop_words]
+
+    if BOT_NICKNAME or BOT_TWITCH_NAME in keywords:
+        try:
+            keywords.remove(BOT_TWITCH_NAME)
+        except ValueError:
+            pass
+        try:
+            keywords.remove(BOT_NICKNAME)
+        except ValueError:
+            pass
+
     logging.info(("Extracted keywords" + str(keywords)))
     return keywords
 
@@ -629,7 +648,8 @@ async def query_gemini_with_memory(user_id, prompt):
                         mood_instructions}\n\n")
 
     if AI_MOODS_FEATURE:
-        adjust_emotional_state_analysis(detected_emotion)
+        if AI_EMOTION_DETECTION_FEATURE:
+            adjust_emotional_state_analysis(detected_emotion)
         print(emotional_states[current_emotion_index])
         print(mood_instructions)
         full_prompt += ("The user seems to be feeling "
@@ -873,6 +893,15 @@ This block also updates the parameters of the model
 based off the feedback received
 """
 
+session_cleanup_time = time.time()
+
+
+def cleanup_memory():
+    global session_cleanup_time
+    if time.time() - session_cleanup_time > 3600:
+        gc.collect()
+        session_cleanup_time = time.time()
+
 
 async def automated_response():
     global message_count, current_emotion_index
@@ -880,14 +909,15 @@ async def automated_response():
     while True:
         wait_time = random.randint(*AUTOMATED_RESPONSE_TIME_RANGE)
         await asyncio.sleep(wait_time)
+        cleanup_memory()
         if AI_MOODS_FEATURE:
-            if random.randint(0, 1) == 0:
+            if random.randint(0, 2) == 0:
                 current_emotion_index = 9
                 logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
-            elif random.randint(0, 1) == 0:
+            elif random.randint(0, 2) == 0:
                 current_emotion_index = 8
                 logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
-            elif random.randint(0, 1) == 0:
+            elif random.randint(0, 2) == 0:
                 random_emotion = random.randint(0, 7)
                 current_emotion_index = random_emotion
                 logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
@@ -952,6 +982,228 @@ async def learning_flag(ctx):
     global AI_LEARNING_FEATURE
     if ctx.author.ud in AUTHORIZED_USERS_LIST:
         AI_LEARNING_FEATURE = not AI_LEARNING_FEATURE
+
+"""
+This is the experimental SST Gemini query functions
+"""
+
+
+async def query_gemini_with_STT(user_id, prompt):
+    global message_count
+    chat_session = model.start_chat(history=[])
+
+    full_prompt = (
+        "This is the user's current prompt:\n"
+        f"{prompt}\n\n"
+    )
+    if AI_MEMORY_FEATURE:
+        user_memory = load_memory(user_id)
+        previous_data = "\n".join(
+            ['User prompt: ' + interaction['prompt']
+             + " Generated Response:" + interaction['response']
+                for interaction in user_memory])
+        full_prompt += ("Here is some previous data from the user to keep in mind:\n"
+                        f"{previous_data}\n\n")
+
+    if AI_EMOTION_DETECTION_FEATURE:
+        emotion_analysis = emotion_classifier(prompt)
+        detected_emotion = emotion_analysis[0]['label']
+        emotion_confidence = emotion_analysis[0]['score']
+        full_prompt += (f"Here is the current emotional state of the bot: \n{
+                        mood_instructions}\n\n")
+
+    if AI_MOODS_FEATURE:
+        if AI_EMOTION_DETECTION_FEATURE:
+            adjust_emotional_state_analysis(detected_emotion)
+        print(emotional_states[current_emotion_index])
+        print(mood_instructions)
+        full_prompt += ("The user seems to be feeling "
+                        f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
+                        "Please respond in a way that reflects this mood.\n\n")
+
+    if AI_WIKIPEDIA_FEATURE:
+        try:
+            if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
+                prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
+            elif prompt.lower().startswith(BOT_NICKNAME.lower()):
+                prompt = prompt[len(BOT_NICKNAME):].strip()
+
+            wiki_summary = await fetch_information(prompt)
+
+            if wiki_summary:
+                full_prompt += (
+                    "Additionally, here is some related factual "
+                    "information from Wikipedia to consider in your response:\n"
+                    f"{wiki_summary}\n\n"
+                )
+
+        except Exception as e:
+            logging.error(f"Error in query processing: {e}")
+            return "Sorry, I'm having trouble with the AI service right now."
+
+        logging.info("Full prompt: " + full_prompt)
+
+    response = chat_session.send_message(full_prompt)
+    generated_text = response.text.strip()
+
+    if AI_MEMORY_FEATURE:
+        user_memory.append({'prompt': prompt, 'response': generated_text})
+        save_memory(user_id, user_memory)
+
+    return generated_text
+
+
+"""
+This is the experimental SST function.
+"""
+
+if AI_STT_FEATURE:
+    import pyaudio
+    import wave
+    import glob
+    import io
+    import threading
+    from google.cloud import speech
+    import numpy as np
+
+    CHUNK = 1024
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 1
+    RATE = 44100
+    INITIAL_THRESHOLD = 600
+    SILENCE_DURATION = 1
+    DEVICE_INDEX = 1
+    NOISE_BUFFER_SIZE = 30
+
+    p = pyaudio.PyAudio()
+
+    if DEVICE_INDEX is None or DEVICE_INDEX >= p.get_device_count():
+        for i in range(p.get_device_count()):
+            info = p.get_device_info_by_index(i)
+            print(f"Device ID: {i}, Device Name: {info['name']}")
+            print(f"Max Input Channels: {info['maxInputChannels']}")
+        logging.info("Please add your microphone's device ID to DEVICE_INDEX and run again.")
+        p.terminate()
+        exit(1)
+
+    frames = []
+    recording = False
+    dynamic_threshold = INITIAL_THRESHOLD
+    noise_buffer = []
+    last_audio_time = time.time()
+
+    def calculate_noise_level():
+        if not noise_buffer:
+            return INITIAL_THRESHOLD
+        return np.mean(noise_buffer)
+
+    async def transcribe_audio(filename):
+        try:
+            client = speech.SpeechClient()
+            with io.open(filename, "rb") as audio_file:
+                content = audio_file.read()
+
+            audio = speech.RecognitionAudio(content=content)
+            config = speech.RecognitionConfig(
+                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                sample_rate_hertz=RATE,
+                language_code="en-US",
+            )
+
+            response = client.recognize(config=config, audio=audio)
+
+            for result in response.results:
+                logging.info("Transcript sent to Gemini API\n"
+                             f"{result.alternatives[0].transcript}")
+                response_text = await query_gemini_with_STT('owner', result.alternatives[0].transcript)
+                clean_response = emoji.replace_emoji(response_text, replace='')
+                audio_file = synthesize_speech(clean_response)
+                logging.info(f"Generated speech audio file: {audio_file}")
+
+                tts_queue.append(audio_file)
+
+                if not is_playing:
+                    await play_next_in_queue()
+        except Exception as e:
+            logging.error(f"Error processing audio: {e}")
+
+    def process_audio(frames, channels, rate):
+        output_file = f"stt_output.{int(time.time())}.wav"
+        try:
+            with wave.open(output_file, 'wb') as wf:
+                wf.setnchannels(channels)
+                wf.setsampwidth(p.get_sample_size(FORMAT))
+                wf.setframerate(rate)
+                wf.writeframes(b''.join(frames))
+        except Exception as e:
+            logging.error(f"Error writing audio file: {e}")
+
+        def run_transcribe():
+            asyncio.run(transcribe_audio(output_file))
+
+        threading.Thread(target=run_transcribe).start()
+
+    def callback(in_data, frame_count, time_info, status):
+        global recording, frames, last_audio_time
+
+        audio_data = np.frombuffer(in_data, dtype=np.int16)
+        audio_level = np.max(np.abs(audio_data))
+
+        noise_buffer.append(audio_level)
+        if len(noise_buffer) > NOISE_BUFFER_SIZE:
+            noise_buffer.pop(0)
+
+        dynamic_threshold = calculate_noise_level() * 1.5
+
+        current_time = time.time()
+
+        if audio_level > dynamic_threshold:
+            last_audio_time = current_time
+            if not recording:
+                recording = True
+                logging.debug("Input detected. Recording...")
+
+        if recording:
+            frames.append(in_data)
+
+            if current_time - last_audio_time > SILENCE_DURATION:
+                recording = False
+                logging.info("Silence detected. Finished recording.")
+                threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
+                frames = []
+                cleanup_old_files('.', max_files=10)
+
+        return (in_data, pyaudio.paContinue)
+
+    def cleanup_old_files(directory, max_files=10):
+        files = sorted(glob.glob(os.path.join(directory, "stt_output.*.wav")), key=os.path.getmtime)
+        while len(files) > max_files:
+            os.remove(files.pop(0))
+            logging.debug("Removed old file.")
+
+    def start_stt():
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK,
+                        input_device_index=DEVICE_INDEX,
+                        stream_callback=callback)
+        logging.info("Speech to text API started.")
+
+        try:
+            stream.start_stream()
+            while True:
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            logging.info("Speech to text API stopped.")
+        finally:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+
+    stt_thread = threading.Thread(target=start_stt)
+    stt_thread.start()
 
 try:
     bot.run()
