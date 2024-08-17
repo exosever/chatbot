@@ -33,7 +33,7 @@
     <br>
     <h1>Upcoming Updates and Features</h1>
     <ul>
-        <li>Implement STT feature for streamer</li>
+        <li>Implement STT feature for streamer - Currently in PROGRESS</li>
         <br>
         <li>Implement a TTS feature - Currently in BETA</li>
         <li>Add buffer/queue for TTS responses - Currently in BETA</li>
