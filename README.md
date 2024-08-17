@@ -35,7 +35,7 @@
     <ul>
         <li>Implement STT feature for streamer - Currently in PROGRESS</li>
         <br>
-        <li>Implement a TTS feature - Currently in BETA</li>
+        <li>Implement a TTS feature - Currently in ALPHA</li>
         <li>Add buffer/queue for TTS responses - Currently in BETA</li>
         <li>Handle the auto-deletion of old TTS files - Currently in BETA</lie>
         <li>Fix TTS redemptions to not require Chester at the front - Currently in BETA</li>
