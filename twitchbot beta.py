@@ -113,7 +113,7 @@ Using https://cloud.google.com/text-to-speech?hl=en to find your settings
 TTS_MODEL = "en-US-Wavenet-I"
 TTS_LANGUAGE = "en-US"
 TTS_PITCH = 6.0
-TTS_SPEAKING_RATE = 1.10
+TTS_SPEAKING_RATE = 1.0
 
 
 """
@@ -129,7 +129,7 @@ setting the LOGGING level to DEBUG.
 --------------------------------------------------------------------------------
 """
 
-AI_WIKIPEDIA_FEATURE = True  # Wikipedia API keyword search
+AI_WIKIPEDIA_FEATURE = False  # Wikipedia API keyword search
 AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
 AI_MOODS_FEATURE = True  # AI moods based on interactions
 AI_MEMORY_FEATURE = True  # Database storage of AI memory
@@ -259,15 +259,16 @@ if AI_WIKIPEDIA_FEATURE:
         logging.error("Failed to create wikipedia instance, error:", f"{e}")
 
 """
-This block initializes the Google TTS API
-Adjusts model, language, pitch, speed, etc
+This block handles the Google TTS API
+Initializes model, language, pitch, speed, etc.
+It also handles the audio buffer and queue
 """
 
 if AI_TTS_FEATURE:
-    from google.cloud import texttospeech
-    import pygame
     import emoji
     from collections import deque
+    from google.cloud import texttospeech
+    from pydub import AudioSegment
 
     tts_queue = deque()
     is_playing = False
@@ -294,13 +295,52 @@ if AI_TTS_FEATURE:
             input=input_text, voice=voice, audio_config=audio_config
         )
 
-        audio_file = f"AI_tts_response_{int(time.time())}.mp3"
+        audio_buffer = io.BytesIO(response.audio_content)
+        logging.info("Audio content written to in-memory buffer")
 
-        with open(audio_file, "wb") as out:
-            out.write(response.audio_content)
-            logging.info(f"Audio content written to file: {audio_file}")
+        return audio_buffer
 
-        return audio_file
+    async def handle_tts_request(text):
+        audio_buffer = synthesize_speech(text)
+        tts_queue.append(audio_buffer)
+
+        if not is_playing:
+            await play_next_in_queue()
+
+    async def play_next_in_queue():
+        global is_playing
+        while tts_queue:
+            audio_buffer = tts_queue.popleft()
+            is_playing = True
+            play_audio_from_buffer(audio_buffer)
+            audio_buffer.close()  # Close the buffer after playback
+
+        is_playing = False
+
+    def play_audio_from_buffer(audio_buffer):
+        audio_buffer.seek(0)  # Ensure buffer is at the start
+
+        # Convert MP3 to PCM
+        audio_segment = AudioSegment.from_mp3(audio_buffer)
+        pcm_buffer = io.BytesIO()
+        audio_segment.export(pcm_buffer, format="wav")
+        pcm_buffer.seek(0)
+
+        with wave.open(pcm_buffer, "rb") as wf:
+            p = pyaudio.PyAudio()
+            stream = p.open(format=pyaudio.paInt16,
+                            channels=wf.getnchannels(),
+                            rate=wf.getframerate(),
+                            output=True)
+
+            data = wf.readframes(1024)
+            while data:
+                stream.write(data)
+                data = wf.readframes(1024)
+
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
 
 
 """
@@ -517,6 +557,7 @@ except Exception as e:
 
 """
 Load and save the persistent memory
+Additionally, cache the memory for faster loading
 """
 
 if AI_MEMORY_FEATURE:
@@ -530,21 +571,34 @@ if AI_MEMORY_FEATURE:
         interactions TEXT
     )''')
 
+    def save_memory(user_id, interactions):
+        cursor.execute('''INSERT OR REPLACE INTO user_memory
+                        (user_id, interactions)
+                        VALUES (?, ?)''', (user_id, json.dumps(interactions)))
+        conn.commit()
+        logging.info("Saved to persistent memory")
 
-def save_memory(user_id, interactions):
-    cursor.execute('''INSERT OR REPLACE INTO user_memory
-                      (user_id, interactions)
-                      VALUES (?, ?)''', (user_id, json.dumps(interactions)))
-    conn.commit()
-    logging.info("Saved to persistent memory")
+    def load_memory(user_id):
+        cursor.execute(
+            'SELECT interactions FROM user_memory WHERE user_id = ?', (user_id,))
+        row = cursor.fetchone()
+        logging.info("Loaded from persistent memory")
+        return json.loads(row[0]) if row else []
 
+    user_memory_cache = {}
 
-def load_memory(user_id):
-    cursor.execute(
-        'SELECT interactions FROM user_memory WHERE user_id = ?', (user_id,))
-    row = cursor.fetchone()
-    logging.info("Loaded from persistent memory")
-    return json.loads(row[0]) if row else []
+    async def load_cached_memory(user_id):
+        if user_id in user_memory_cache:
+            return user_memory_cache[user_id]
+
+        user_memory = load_memory(user_id)
+        user_memory_cache[user_id] = user_memory
+        return user_memory
+
+    async def save_cached_memory(user_id, memory_data):
+
+        save_memory(user_id, memory_data)
+        user_memory_cache[user_id] = memory_data
 
 
 """
@@ -632,7 +686,7 @@ async def query_gemini_with_memory(user_id, prompt):
     )
 
     if AI_MEMORY_FEATURE:
-        user_memory = load_memory(user_id)
+        user_memory = await load_cached_memory(user_id)
         previous_data = "\n".join(
             ['User prompt: ' + interaction['prompt']
              + " Generated Response:" + interaction['response']
@@ -686,7 +740,7 @@ async def query_gemini_with_memory(user_id, prompt):
 
     if AI_MEMORY_FEATURE:
         user_memory.append({'prompt': prompt, 'response': generated_text})
-        save_memory(user_id, user_memory)
+        await save_cached_memory(user_id, user_memory)
 
     message_count = 0
 
@@ -746,34 +800,6 @@ if AI_LEARNING_FEATURE:
             update_parameters_based_on_feedback()
 
 
-async def play_next_in_queue():
-    global is_playing
-    while tts_queue:
-
-        audio_file = tts_queue.popleft()
-        is_playing = True
-        pygame.mixer.init()
-        pygame.mixer.music.load(audio_file)
-        pygame.mixer.music.play()
-
-        logging.info(f"Playing audio file: {audio_file}")
-
-        while pygame.mixer.music.get_busy():
-            await asyncio.sleep(0.1)
-
-        logging.info("Audio playback finished.")
-
-        is_playing = False
-
-        try:
-            pygame.mixer.music.stop()
-            pygame.mixer.music.unload()
-            os.remove(audio_file)
-            logging.info(f"Removed audio file: {audio_file}")
-        except Exception as e:
-            logging.error(f"Error removing file {audio_file}: {e}")
-
-
 """
 This function checks if the message is from a user
 If so, it formats the prompt to be sent to the API
@@ -809,25 +835,19 @@ async def event_message(message):
             logging.error(f"Error processing message from Gemini: {e}")
 
         clean_response = emoji.replace_emoji(response, replace='')
-        audio_file = synthesize_speech(clean_response)
-        logging.info(f"Generated speech audio file: {audio_file}")
+        await message.channel.send(response)
+        await handle_tts_request(clean_response)
 
-        tts_queue.append(audio_file)
+        if (current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD
+                and AI_LEARNING_FEATURE):
+            await message.channel.send(
+                'Be sure to use !feedback <good/bad> '
+                'to let me know if I did a good job!'
+            )
 
-        if not is_playing:
-            await message.channel.send(response)
-            await play_next_in_queue()
+            last_feedback_message_time = current_time
 
-            if (current_time - last_feedback_message_time >= FEEDBACK_TIME_THRESHOLD
-                    and AI_LEARNING_FEATURE):
-                await message.channel.send(
-                    'Be sure to use !feedback <good/bad> '
-                    'to let me know if I did a good job!'
-                )
-
-                last_feedback_message_time = current_time
-
-            logging.info(f"Sent response: {response}")
+        logging.info(f"Sent response: {response}")
 
     elif (
         message.content.lower().startswith(BOT_NICKNAME.lower())
@@ -983,8 +1003,9 @@ async def learning_flag(ctx):
     if ctx.author.ud in AUTHORIZED_USERS_LIST:
         AI_LEARNING_FEATURE = not AI_LEARNING_FEATURE
 
+
 """
-This is the experimental SST Gemini query functions
+This is the experimental STT Gemini query functions
 """
 
 
@@ -997,7 +1018,7 @@ async def query_gemini_with_STT(user_id, prompt):
         f"{prompt}\n\n"
     )
     if AI_MEMORY_FEATURE:
-        user_memory = load_memory(user_id)
+        user_memory = await load_cached_memory(user_id)
         previous_data = "\n".join(
             ['User prompt: ' + interaction['prompt']
              + " Generated Response:" + interaction['response']
@@ -1048,7 +1069,7 @@ async def query_gemini_with_STT(user_id, prompt):
 
     if AI_MEMORY_FEATURE:
         user_memory.append({'prompt': prompt, 'response': generated_text})
-        save_memory(user_id, user_memory)
+        await save_cached_memory(user_id, user_memory)
 
     return generated_text
 
@@ -1097,13 +1118,12 @@ if AI_STT_FEATURE:
             return INITIAL_THRESHOLD
         return np.mean(noise_buffer)
 
-    async def transcribe_audio(filename):
+    async def transcribe_audio(audio_buffer):
         try:
             client = speech.SpeechClient()
-            with io.open(filename, "rb") as audio_file:
-                content = audio_file.read()
+            audio_content = audio_buffer.getvalue()  # Read buffer content
 
-            audio = speech.RecognitionAudio(content=content)
+            audio = speech.RecognitionAudio(content=audio_content)
             config = speech.RecognitionConfig(
                 encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
                 sample_rate_hertz=RATE,
@@ -1116,11 +1136,12 @@ if AI_STT_FEATURE:
                 logging.info("Transcript sent to Gemini API\n"
                              f"{result.alternatives[0].transcript}")
                 response_text = await query_gemini_with_STT('owner', result.alternatives[0].transcript)
+                logging.info("Response from Gemini API: " + response_text)
                 clean_response = emoji.replace_emoji(response_text, replace='')
-                audio_file = synthesize_speech(clean_response)
-                logging.info(f"Generated speech audio file: {audio_file}")
+                audio_file_buffer = synthesize_speech(clean_response)
+                logging.info("Generated speech audio buffer.")
 
-                tts_queue.append(audio_file)
+                tts_queue.append(audio_file_buffer)
 
                 if not is_playing:
                     await play_next_in_queue()
@@ -1128,18 +1149,16 @@ if AI_STT_FEATURE:
             logging.error(f"Error processing audio: {e}")
 
     def process_audio(frames, channels, rate):
-        output_file = f"stt_output.{int(time.time())}.wav"
-        try:
-            with wave.open(output_file, 'wb') as wf:
-                wf.setnchannels(channels)
-                wf.setsampwidth(p.get_sample_size(FORMAT))
-                wf.setframerate(rate)
-                wf.writeframes(b''.join(frames))
-        except Exception as e:
-            logging.error(f"Error writing audio file: {e}")
+        audio_buffer = io.BytesIO()
+        with wave.open(audio_buffer, 'wb') as wf:
+            wf.setnchannels(channels)
+            wf.setsampwidth(p.get_sample_size(FORMAT))
+            wf.setframerate(rate)
+            wf.writeframes(b''.join(frames))
+        audio_buffer.seek(0)  # Rewind buffer for reading
 
         def run_transcribe():
-            asyncio.run(transcribe_audio(output_file))
+            asyncio.run(transcribe_audio(audio_buffer))
 
         threading.Thread(target=run_transcribe).start()
 
