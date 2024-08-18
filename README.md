@@ -7,8 +7,8 @@
     <li><strong>Generative AI:</strong> Utilizes the Gemini 1.5 Flash model for generating context-aware text responses.</li>
     <li><strong>User-Specific Learning:</strong> The bot stores and references historical user prompts to refine responses over time.</li>
     <li><strong>Customizable Instructions:</strong> Instructions for the AI are defined in the <code>chatbot_instructions.txt</code> file, allowing for tailored behavior and specific responses.</li>
-    <li><strong>Text-to-Speech (TTS) Integration:</strong> The bot can generate spoken responses, enhancing user interaction with voice communication. Currently in BETA.</li>
-    <li><strong>Speech-to-Text (STT) Integration:</strong> The bot can transcribe spoken commands, enabling voice-driven interactions. Currently in BETA.</li>
+    <li><strong>Text-to-Speech (TTS) Integration:</strong> The bot can generate spoken responses, enhancing user interaction with voice communication.</li>
+    <li><strong>Speech-to-Text (STT) Integration:</strong> The bot can transcribe spoken input, enabling voice-driven interactions.</li>
     <li><strong>Dynamic Response Buffering:</strong> Both text and audio responses are managed with a buffering system, ensuring smooth and timely delivery.</li>
     <li><strong>Robust Logging:</strong> Multiple levels of logging are implemented, including DEBUG mode for tracing and troubleshooting, along with INFO level logging for monitoring AI functions.</li>
     <li><strong>API Key Management:</strong> API keys are securely stored in a local <code>.env</code> file, with enhanced feedback on API key failures.</li>
