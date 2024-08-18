@@ -135,12 +135,10 @@ AI_MOODS_FEATURE = True  # AI moods based on interactions
 AI_MEMORY_FEATURE = True  # Database storage of AI memory
 AI_LEARNING_FEATURE = True  # AI learning from user feedback
 AI_TTS_FEATURE = True  # TTS generation of AI responses
-AI_TTS_FEATURE = AI_STT_FEATURE = True  # SST API for speech recognition. TTS API is required.
+AI_STT_FEATURE = True  # SST API for speech recognition. TTS API is required.
 
 if AI_STT_FEATURE and not AI_TTS_FEATURE:
-    print("If STT is enabled, TTS must also be enabled")
-    logging.error("If STT is enabled, TTS must also be enabled")
-    exit()
+    AI_TTS_FEATURE = True
 
 """
 --------------------------------------------------------------------------------
