@@ -30,6 +30,7 @@
         Ensure these credentials are for your bot account.
     </li>
     <li><strong>Gemini API Key:</strong> Get an API key for the Google Gemini LLM from <a href='aistudio.google.com'>Google AI Studio</a>.</li>
+    <li><strong>TTS/SST API:</strong> To get your API keys for SST and TTS, go to <a href='https://cloud.google.com/text-to-speech?hl=en'>Google Cloud Console</a></li>
     <li><strong>Environment Configuration:</strong> Store your API keys and setup variables in a <code>.env</code> file. Ensure the file is correctly loaded using <code>load_dotenv()</code> in your script.</li>
     <li><strong>AI Instructions:</strong> Write the AI’s behavioral guidelines and specific response rules in the <code>chatbot_instructions.txt</code> file.</li>
     <li><strong>Launch the Bot:</strong> Run the script to start your chatbot. If you encounter any issues, set the logging level to DEBUG and check the logs for detailed error information.</li>
