@@ -1,41 +1,51 @@
 <body>
-    <h1>Project Overview</h1>
-    <p>This project delivers a highly customizable Twitch AI chatbot that evolves and learns from individual user interactions. Powered by the Google Gemini 1.5 Flash model, the chatbot generates contextually aware text responses. It leverages SQLite for storing user-submitted prompts, allowing the chatbot to enhance its performance and relevance over time by referencing historical data.</p>
-    <h2>Features</h2>
-    <ul>
-        <li><strong>Generative AI:</strong> Utilizes the Gemini 1.5 Flash model for generating context-aware text responses.</li>
-        <li><strong>User-Specific Learning:</strong> The bot stores and references historical user prompts to refine responses over time.</li>
-        <li><strong>Customizable Instructions:</strong> Instructions for the AI are defined in the chatbot_instructions.txt file, allowing for tailored behavior and specific responses.</li>
-        <li><strong>Robust Logging:</strong> Multiple levels of logging are implemented, including DEBUG mode for tracing and troubleshooting.</li>
-        <li><strong>API Key Management:</strong> API keys are securely stored in a local .env file.</li>
-        <li><strong>Safety Controls:</strong> Configurable safety settings to ensure appropriate content moderation.</li>
-        <li><strong>Wikipedia Integration:</strong> Accesses Wikipedia API for more knowledgeable responses.</li>
-        <li><strong>Reinforcement Learning:</strong> Utilizes reinforcement learning to fine-tune responses based on interactions.</li>
-        <li><strong>Emotion Detection:</strong> Detects and adjusts responses based on user sentiment analysis.</li>
-        <li><strong>Mood-Based Emotional Range:</strong> Expresses a wide array of emotions based on user interactions, enhancing dynamic engagement.</li>
-    </ul>
-    <h2>Setup Instructions</h2>
-    <ul>
-        <li><strong>Twitch Account Setup:</strong> Create a Twitch account for your chatbot and obtain the Client ID and OAuth token with read/write access:
-            <ul>
-                <li>Client ID: Twitch Token Generator</li>
-                <li>OAuth Token: Twitch Developer Console</li>
-            </ul>
-            Ensure these credentials are for your bot account.</li>
-        <li><strong>Gemini API Key:</strong> Get an API key for the Google Gemini LLM from Google AI Studio.</li>
-        <li><strong>Environment Configuration:</strong> Store your API keys and setup variables in a <code>.env</code> file. Ensure the file is correctly loaded using <code>load_dotenv()</code> in your script.</li>
-        <li><strong>AI Instructions:</strong> Write the AI’s behavioral guidelines and specific response rules in the <code>chatbot_instructions.txt</code> file.</li>
-        <li><strong>Launch the Bot:</strong> Run the script to start your chatbot. If you encounter any issues, set the logging level to DEBUG and check the logs for detailed error information.</li>
-    </ul>
-    <h2>Summary</h2>
-    <p>This Twitch AI chatbot offers a powerful and flexible platform for engaging with users in a personalized way. With its ability to learn from past interactions, adapt its responses, and manage emotional states, it provides a dynamic and interactive experience for Twitch communities.</p>
-    <br>
+<h1>Project Overview</h1>
+<p>This project delivers a highly customizable Twitch AI chatbot that evolves and learns from individual user interactions. Powered by the Google Gemini 1.5 Flash model, the chatbot generates contextually aware text responses. It leverages SQLite for storing user-submitted prompts, allowing the chatbot to enhance its performance and relevance over time by referencing historical data.</p>
+
+<h2>Features</h2>
+<ul>
+    <li><strong>Generative AI:</strong> Utilizes the Gemini 1.5 Flash model for generating context-aware text responses.</li>
+    <li><strong>User-Specific Learning:</strong> The bot stores and references historical user prompts to refine responses over time.</li>
+    <li><strong>Customizable Instructions:</strong> Instructions for the AI are defined in the <code>chatbot_instructions.txt</code> file, allowing for tailored behavior and specific responses.</li>
+    <li><strong>Text-to-Speech (TTS) Integration:</strong> The bot can generate spoken responses, enhancing user interaction with voice communication. Currently in BETA.</li>
+    <li><strong>Speech-to-Text (STT) Integration:</strong> The bot can transcribe spoken commands, enabling voice-driven interactions. Currently in BETA.</li>
+    <li><strong>Dynamic Response Buffering:</strong> Both text and audio responses are managed with a buffering system, ensuring smooth and timely delivery.</li>
+    <li><strong>Robust Logging:</strong> Multiple levels of logging are implemented, including DEBUG mode for tracing and troubleshooting, along with INFO level logging for monitoring AI functions.</li>
+    <li><strong>API Key Management:</strong> API keys are securely stored in a local <code>.env</code> file, with enhanced feedback on API key failures.</li>
+    <li><strong>Safety Controls:</strong> Configurable safety settings to ensure appropriate content moderation.</li>
+    <li><strong>Wikipedia Integration:</strong> Accesses Wikipedia API for more knowledgeable responses.</li>
+    <li><strong>Reinforcement Learning:</strong> Utilizes reinforcement learning to fine-tune responses based on interactions.</li>
+    <li><strong>Emotion Detection:</strong> Detects and adjusts responses based on user sentiment analysis.</li>
+    <li><strong>Mood-Based Emotional Range:</strong> Expresses a wide array of emotions based on user interactions, enhancing dynamic engagement. Users can customize emotional responses using the <code>emotional_states.txt</code> file.</li>
+    <li><strong>Real-Time Feature Management:</strong> Allows users to change feature flags while the bot is running, enabling or disabling functions on the fly.</li>
+</ul>
+
+<h2>Setup Instructions</h2>
+<ul>
+    <li><strong>Twitch Account Setup:</strong> Create a Twitch account for your chatbot and obtain the Client ID and OAuth token with read/write access:
+        <ul>
+            <li>Client ID: Twitch Token Generator</li>
+            <li>OAuth Token: Twitch Developer Console</li>
+        </ul>
+        Ensure these credentials are for your bot account.
+    </li>
+    <li><strong>Gemini API Key:</strong> Get an API key for the Google Gemini LLM from Google AI Studio.</li>
+    <li><strong>Environment Configuration:</strong> Store your API keys and setup variables in a <code>.env</code> file. Ensure the file is correctly loaded using <code>load_dotenv()</code> in your script.</li>
+    <li><strong>AI Instructions:</strong> Write the AI’s behavioral guidelines and specific response rules in the <code>chatbot_instructions.txt</code> file.</li>
+    <li><strong>Launch the Bot:</strong> Run the script to start your chatbot. If you encounter any issues, set the logging level to DEBUG and check the logs for detailed error information.</li>
+</ul>
+
+<h2>Summary</h2>
+<p>This Twitch AI chatbot offers a powerful and flexible platform for engaging with users in a personalized way. With its ability to learn from past interactions, adapt its responses, and manage emotional states, it provides a dynamic and interactive experience for Twitch communities. The addition of TTS and STT features, along with enhanced logging and real-time feature management, makes it a comprehensive solution for modern Twitch streaming.</p>
+<br>
     <br>
     <h1>Upcoming Updates and Features</h1>
     <ul>
-        <li>Possibly redo standard-user set-up. Put all user viariables in the .env? 
+        <li>Possibly redo standard-user set-up. Put all user variables in the .env? 
         <br>This will make the CLI only for debugging and make it simpler to use.</li>
-        <li>Improve or replace LLM</li>
+        <li>Possibly improve or replace LLM, may try a custom trained Gemini first.
+        <br>The model functions well, but is very limited on knowledge.</li>
+        <li>Can we go 100% open-source?</li>
     </ul>
     <br>
     <br>
