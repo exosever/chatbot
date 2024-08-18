@@ -33,35 +33,46 @@
     <br>
     <h1>Upcoming Updates and Features</h1>
     <ul>
-        <li>Implement STT feature for streamer - Currently in ALPHA</li>
-        <br>
-        <li>Implement a TTS feature - Currently in BETA</li>
-        <li>Add buffer/queue for TTS responses - Currently in BETA</li>
-        <li>Handle the auto-deletion of old TTS files - Currently in BETA</lie>
-        <li>Fix TTS redemptions to not require Chester at the front - Currently in BETA</li>
-        <li>Have message and audio responses for TTS queue at same time - Currently in BETA</li>
-        <li>Have flags changeable while bot is running - Currently in BETA</li>
-        <br>
-        <li>Fixed error in memory handling, was improperly processing historical data in the full_prompt</li>
-        <li>Fixed error where AI consistently believed user was referencing it in questions</li>
-        <li>Fixed error with wikipedia queries</li>
-        <li>Fixed error in handling empty or non-existent .env </li>
-        <li>Fixed error in creating and loading new chatbot_instructions when one is not present</li>
-        <li>To assist users, added more feedback on specific API key failures</li>
-        <li>Added additional INFO level logging to not only debug issues but to observe the AI's functions</li>
-        <li>Added authorized users list to access administrative commands</li>
-        <li>Added an emotional_states.txt file so user can easily customize AI emotions</li>
-        <li>Switched Read/Write of audio filed to a buffer</li>
-        <br>
         <li>Possibly redo standard-user set-up. Put all user viariables in the .env? 
-            <br>This will make the CLI only for debugging and make it simpler to use.</li>
-        <li>Clean up and improve async and threaded operations</li>
+        <br>This will make the CLI only for debugging and make it simpler to use.</li>
+        <li>Improve or replace LLM</li>
     </ul>
     <br>
     <br>
 <body>
     <h1>Change Log</h1>
     <details open>
+    <summary><h2>Version 5.0</h2></summary>
+    <h3>New Features:</h3>
+    <ul>
+        <li><strong>TTS Feature:</strong> Implemented a Text-to-Speech (TTS) feature, allowing the bot to respond with synthesized speech.</li>
+        <li><strong>TTS Buffer/Queue:</strong> Added a buffer/queue system for managing TTS responses, ensuring they are processed in order.</li>
+        <li><strong>STT Integration:</strong> Integrated Speech-to-Text (STT) functionality, enabling the bot to transcribe spoken prompts and respond appropriately.</li>
+        <li><strong>Simultaneous Message and Audio Responses:</strong> Enabled the bot to queue both message and audio responses at the same time.</li>
+        <li><strong>Dynamic Flag Changes:</strong> Made feature flags changeable while the bot is running, offering greater flexibility.</li>
+    </ul>
+    <h3>Bug Fixes:</h3>
+    <ul>
+        <li><strong>TTS Redemptions:</strong> Fixed the requirement for "Chester" at the front of TTS redemptions, streamlining user interactions.</li>
+        <li><strong>Memory Handling:</strong> Fixed an error where the bot improperly processed historical data in the full_prompt.</li>
+        <li><strong>AI User Reference:</strong> Resolved an issue where the AI consistently believed the user was referencing it in questions.</li>
+        <li><strong>Wikipedia Queries:</strong> Fixed an error in handling Wikipedia queries, improving search accuracy.</li>
+        <li><strong>.env Handling:</strong> Addressed an error related to handling empty or non-existent .env files.</li>
+        <li><strong>Chatbot Instructions:</strong> Fixed an issue with creating and loading new chatbot_instructions when one was not present.</li>
+    </ul>
+    <h3>Improvements:</h3>
+    <ul>
+        <li><strong>STT Audio:</strong> Implemented a self-improving noise gate that will adapt to background noise over time.
+            <br> - Also added a silence filter to enhance the accuracy of start/end of recording and save resources.
+        <li><strong>API Key Feedback:</strong> Added more feedback on specific API key failures to assist users in troubleshooting.</li>
+        <li><strong>INFO Level Logging:</strong> Enhanced INFO level logging to not only debug issues but also to observe the AI's functions in real-time.</li>
+        <li><strong>Authorized Users List:</strong> Added an authorized users list to manage access to administrative commands.</li>
+        <li><strong>Emotional States Customization:</strong> Added an emotional_states.txt file to allow users to easily customize AI emotions.</li>
+        <li><strong>Audio File Handling:</strong> Switched the Read/Write operations of audio files to a buffer for improved performance.</li>
+        <li><strong>Async and Threads:</strong> Cleaned up and improved async and threaded operations</li>
+    </ul>
+    </details>
+    <details>
         <summary><h2>Version 4.1</h2></summary>
         <p>---------------------------------------------------------------------------------------------------------------------------------</p>
         <h3>New Features:</h3>
