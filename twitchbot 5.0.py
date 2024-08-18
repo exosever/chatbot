@@ -135,7 +135,7 @@ AI_MOODS_FEATURE = True  # AI moods based on interactions
 AI_MEMORY_FEATURE = True  # Database storage of AI memory
 AI_LEARNING_FEATURE = True  # AI learning from user feedback
 AI_TTS_FEATURE = True  # TTS generation of AI responses
-AI_STT_FEATURE = True  # SST API for speech recognition
+AI_TTS_FEATURE = AI_STT_FEATURE = True  # SST API for speech recognition. TTS API is required.
 
 if AI_STT_FEATURE and not AI_TTS_FEATURE:
     print("If STT is enabled, TTS must also be enabled")
@@ -269,6 +269,7 @@ if AI_TTS_FEATURE:
     from collections import deque
     from google.cloud import texttospeech
     from pydub import AudioSegment
+    import io
 
     tts_queue = deque()
     is_playing = False
@@ -328,10 +329,11 @@ if AI_TTS_FEATURE:
 
         with wave.open(pcm_buffer, "rb") as wf:
             p = pyaudio.PyAudio()
+
             stream = p.open(format=pyaudio.paInt16,
                             channels=wf.getnchannels(),
                             rate=wf.getframerate(),
-                            output=True)
+                            output=True,)
 
             data = wf.readframes(1024)
             while data:
@@ -341,6 +343,218 @@ if AI_TTS_FEATURE:
             stream.stop_stream()
             stream.close()
             p.terminate()
+
+
+"""
+These are the experimental STT Gemini query functions
+"""
+
+
+async def query_gemini_with_STT(user_id, prompt):
+    global message_count
+    chat_session = model.start_chat(history=[])
+
+    full_prompt = (
+        "This is the user's current prompt:\n"
+        f"{prompt}\n\n"
+    )
+    if AI_MEMORY_FEATURE:
+        user_memory = await load_cached_memory(user_id)
+        previous_data = "\n".join(
+            ['User prompt: ' + interaction['prompt']
+             + " Generated Response:" + interaction['response']
+                for interaction in user_memory])
+        full_prompt += ("Here is some previous data from the user to keep in mind:\n"
+                        f"{previous_data}\n\n")
+
+    if AI_EMOTION_DETECTION_FEATURE:
+        emotion_analysis = emotion_classifier(prompt)
+        detected_emotion = emotion_analysis[0]['label']
+        emotion_confidence = emotion_analysis[0]['score']
+        full_prompt += (f"Here is the current emotional state of the bot: \n{
+                        mood_instructions}\n\n")
+
+    if AI_MOODS_FEATURE:
+        if AI_EMOTION_DETECTION_FEATURE:
+            adjust_emotional_state_analysis(detected_emotion)
+        print(emotional_states[current_emotion_index])
+        print(mood_instructions)
+        full_prompt += ("The user seems to be feeling "
+                        f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
+                        "Please respond in a way that reflects this mood.\n\n")
+
+    if AI_WIKIPEDIA_FEATURE:
+        try:
+            if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
+                prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
+            elif prompt.lower().startswith(BOT_NICKNAME.lower()):
+                prompt = prompt[len(BOT_NICKNAME):].strip()
+
+            wiki_summary = await fetch_information(prompt)
+
+            if wiki_summary:
+                full_prompt += (
+                    "Additionally, here is some related factual "
+                    "information from Wikipedia to consider in your response:\n"
+                    f"{wiki_summary}\n\n"
+                )
+
+        except Exception as e:
+            logging.error(f"Error in query processing: {e}")
+            return "Sorry, I'm having trouble with the AI service right now."
+
+        logging.info("Full prompt: " + full_prompt)
+
+    response = chat_session.send_message(full_prompt)
+    generated_text = response.text.strip()
+
+    if AI_MEMORY_FEATURE:
+        user_memory.append({'prompt': prompt, 'response': generated_text})
+        await save_cached_memory(user_id, user_memory)
+
+    return generated_text
+
+
+"""
+This is the experimental STT function.
+"""
+
+if AI_STT_FEATURE:
+    import pyaudio
+    import wave
+    import threading
+    from google.cloud import speech
+    import numpy as np
+
+    CHUNK = 1024
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 1
+    RATE = 44100
+    INITIAL_THRESHOLD = 600
+    SILENCE_DURATION = 1
+    DEVICE_INDEX = 1
+    NOISE_BUFFER_SIZE = 30
+
+    p = pyaudio.PyAudio()
+
+    if DEVICE_INDEX is None or DEVICE_INDEX >= p.get_device_count():
+        for i in range(p.get_device_count()):
+            info = p.get_device_info_by_index(i)
+            print(f"Device ID: {i}, Device Name: {info['name']}")
+            print(f"Max Input Channels: {info['maxInputChannels']}")
+        logging.info("Please add your microphone's device ID to DEVICE_INDEX and run again.")
+        p.terminate()
+        exit(1)
+
+    frames = []
+    recording = False
+    dynamic_threshold = INITIAL_THRESHOLD
+    noise_buffer = []
+    last_audio_time = time.time()
+
+    def calculate_noise_level():
+        if not noise_buffer:
+            return INITIAL_THRESHOLD
+        return np.mean(noise_buffer)
+
+    async def transcribe_audio(audio_buffer):
+        try:
+            client = speech.SpeechClient()
+            audio_content = audio_buffer.getvalue()  # Read buffer content
+
+            audio = speech.RecognitionAudio(content=audio_content)
+            config = speech.RecognitionConfig(
+                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                sample_rate_hertz=RATE,
+                language_code="en-US",
+            )
+
+            response = client.recognize(config=config, audio=audio)
+
+            for result in response.results:
+                logging.info("Transcript sent to Gemini API\n"
+                             f"{result.alternatives[0].transcript}")
+                response_text = await query_gemini_with_STT('owner', result.alternatives[0].transcript)
+                logging.info("Response from Gemini API: " + response_text)
+                clean_response = emoji.replace_emoji(response_text, replace='')
+                audio_file_buffer = synthesize_speech(clean_response)
+                logging.info("Generated speech audio buffer.")
+
+                tts_queue.append(audio_file_buffer)
+
+                if not is_playing:
+                    await play_next_in_queue()
+        except Exception as e:
+            logging.error(f"Error processing audio: {e}")
+
+    def process_audio(frames, channels, rate):
+        audio_buffer = io.BytesIO()
+        with wave.open(audio_buffer, 'wb') as wf:
+            wf.setnchannels(channels)
+            wf.setsampwidth(p.get_sample_size(FORMAT))
+            wf.setframerate(rate)
+            wf.writeframes(b''.join(frames))
+        audio_buffer.seek(0)  # Rewind buffer for reading
+
+        def run_transcribe():
+            asyncio.run(transcribe_audio(audio_buffer))
+
+        threading.Thread(target=run_transcribe).start()
+
+    def callback(in_data, frame_count, time_info, status):
+        global recording, frames, last_audio_time
+
+        audio_data = np.frombuffer(in_data, dtype=np.int16)
+        audio_level = np.max(np.abs(audio_data))
+
+        noise_buffer.append(audio_level)
+        if len(noise_buffer) > NOISE_BUFFER_SIZE:
+            noise_buffer.pop(0)
+
+        dynamic_threshold = calculate_noise_level() * 1.5
+
+        current_time = time.time()
+
+        if audio_level > dynamic_threshold:
+            last_audio_time = current_time
+            if not recording:
+                recording = True
+                logging.debug("Input detected. Recording...")
+
+        if recording:
+            frames.append(in_data)
+
+            if current_time - last_audio_time > SILENCE_DURATION:
+                recording = False
+                logging.info("Silence detected. Finished recording.")
+                threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
+                frames = []
+
+        return (in_data, pyaudio.paContinue)
+
+    def start_stt():
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK,
+                        input_device_index=DEVICE_INDEX,
+                        stream_callback=callback)
+        logging.info("Speech to text API started.")
+
+        try:
+            stream.start_stream()
+            while True:
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            logging.info("Speech to text API stopped.")
+        finally:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+
+    stt_thread = threading.Thread(target=start_stt)
+    stt_thread.start()
 
 
 """
@@ -509,6 +723,30 @@ def update_parameters_based_on_feedback():
 
 
 """
+This function saves the feedback from the user
+Simple positive or negative feedback will be used to adjust
+the parameters of the model
+"""
+
+
+feedback_list_max_size = 5
+feedback_list = []
+
+
+def add_feedback_user_id(user_id):
+    if len(feedback_list) >= feedback_list_max_size:
+        feedback_list.pop(0)
+    feedback_list.append(user_id)
+
+
+def can_give_feedback(user_id):
+    if user_id in feedback_list:
+        feedback_list.remove(user_id)
+        return True
+    return False
+
+
+"""
 Load the instructions for the bot personality if they exist
 """
 
@@ -562,7 +800,7 @@ Additionally, cache the memory for faster loading
 
 if AI_MEMORY_FEATURE:
     import sqlite3
-    conn = sqlite3.connect('chatbot_memory.db', check_same_thread=True)
+    conn = sqlite3.connect('chatbot_memory.db', check_same_thread=False)
     cursor = conn.cursor()
     logging.info("Loaded persistent memory")
 
@@ -746,58 +984,15 @@ async def query_gemini_with_memory(user_id, prompt):
 
     return generated_text
 
-"""
-Command to describe the AI to the user
-"""
-
-
-@ bot.command(name='AI')
-async def ai(ctx):
-    await ctx.send("I'm a bot created by @thejoshinatah! ^.^ "
-                   "I make use of multiple APIs "
-                   "and models to generate responses! "
-                   "If you'd like to know more, check out our "
-                   "github https://github.com/exosever/chatbot/"
-                   )
 
 """
-This function saves the feedback from the user
-Simple positive or negative feedback will be used to adjust
-the parameters of the model
+--------------------------------------------------------------------------------
+BOT CONFIGURATION - ADVANCED USERS
+--- BOT EVENTS ---
+
+These are the bot events
+--------------------------------------------------------------------------------
 """
-
-
-feedback_list_max_size = 5
-feedback_list = []
-
-
-def add_feedback_user_id(user_id):
-    if len(feedback_list) >= feedback_list_max_size:
-        feedback_list.pop(0)
-    feedback_list.append(user_id)
-
-
-def can_give_feedback(user_id):
-    if user_id in feedback_list:
-        feedback_list.remove(user_id)
-        return True
-    return False
-
-
-if AI_LEARNING_FEATURE:
-    @ bot.command(name='feedback')
-    async def feedback(ctx, feedback_type):
-        global feedback_memory
-        user_id = str(ctx.author.id)
-        if can_give_feedback(user_id):
-            if feedback_type.lower() == 'good':
-                feedback_memory.append({'positive': 1})
-                await ctx.send("Thank's for letting me know! ^.^")
-            elif feedback_type.lower() == 'bad':
-                feedback_memory.append({'negative': 1})
-                await ctx.send("I'm sorry about that! Thanks for "
-                               "helping me do better next time!")
-            update_parameters_based_on_feedback()
 
 
 """
@@ -957,9 +1152,42 @@ async def automated_response():
 
 
 """
-These are bot commands to turn off and on functions from within the twitch chat
-Only authorized users can use these commands. User IDs are stored in the AUTHORIZED_USERS_LIST
+--------------------------------------------------------------------------------
+BOT CONFIGURATION - ADVANCED USERS
+--- BOT COMMANDS ---
+
+These are the bot commands
+Those with if.ctx.author.ud in AUTHORIZED_USERS_LIST are authorized user only commands
+
+--------------------------------------------------------------------------------
 """
+
+
+# Command to describe the AI to the user
+@ bot.command(name='AI')
+async def ai(ctx):
+    await ctx.send("I'm a bot created by @thejoshinatah! ^.^ "
+                   "I make use of multiple APIs "
+                   "and models to generate responses! "
+                   "If you'd like to know more, check out our "
+                   "github https://github.com/exosever/chatbot/"
+                   )
+
+# Command to submit user feedback to reinforcement learning
+if AI_LEARNING_FEATURE:
+    @ bot.command(name='feedback')
+    async def feedback(ctx, feedback_type):
+        global feedback_memory
+        user_id = str(ctx.author.id)
+        if can_give_feedback(user_id):
+            if feedback_type.lower() == 'good':
+                feedback_memory.append({'positive': 1})
+                await ctx.send("Thank's for letting me know! ^.^")
+            elif feedback_type.lower() == 'bad':
+                feedback_memory.append({'negative': 1})
+                await ctx.send("I'm sorry about that! Thanks for "
+                               "helping me do better next time!")
+            update_parameters_based_on_feedback()
 
 
 @ bot.command(name='Wikipedia')
@@ -1002,219 +1230,6 @@ async def learning_flag(ctx):
     global AI_LEARNING_FEATURE
     if ctx.author.ud in AUTHORIZED_USERS_LIST:
         AI_LEARNING_FEATURE = not AI_LEARNING_FEATURE
-
-
-"""
-This are the experimental STT Gemini query functions
-"""
-
-
-async def query_gemini_with_STT(user_id, prompt):
-    global message_count
-    chat_session = model.start_chat(history=[])
-
-    full_prompt = (
-        "This is the user's current prompt:\n"
-        f"{prompt}\n\n"
-    )
-    if AI_MEMORY_FEATURE:
-        user_memory = await load_cached_memory(user_id)
-        previous_data = "\n".join(
-            ['User prompt: ' + interaction['prompt']
-             + " Generated Response:" + interaction['response']
-                for interaction in user_memory])
-        full_prompt += ("Here is some previous data from the user to keep in mind:\n"
-                        f"{previous_data}\n\n")
-
-    if AI_EMOTION_DETECTION_FEATURE:
-        emotion_analysis = emotion_classifier(prompt)
-        detected_emotion = emotion_analysis[0]['label']
-        emotion_confidence = emotion_analysis[0]['score']
-        full_prompt += (f"Here is the current emotional state of the bot: \n{
-                        mood_instructions}\n\n")
-
-    if AI_MOODS_FEATURE:
-        if AI_EMOTION_DETECTION_FEATURE:
-            adjust_emotional_state_analysis(detected_emotion)
-        print(emotional_states[current_emotion_index])
-        print(mood_instructions)
-        full_prompt += ("The user seems to be feeling "
-                        f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
-                        "Please respond in a way that reflects this mood.\n\n")
-
-    if AI_WIKIPEDIA_FEATURE:
-        try:
-            if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
-                prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
-            elif prompt.lower().startswith(BOT_NICKNAME.lower()):
-                prompt = prompt[len(BOT_NICKNAME):].strip()
-
-            wiki_summary = await fetch_information(prompt)
-
-            if wiki_summary:
-                full_prompt += (
-                    "Additionally, here is some related factual "
-                    "information from Wikipedia to consider in your response:\n"
-                    f"{wiki_summary}\n\n"
-                )
-
-        except Exception as e:
-            logging.error(f"Error in query processing: {e}")
-            return "Sorry, I'm having trouble with the AI service right now."
-
-        logging.info("Full prompt: " + full_prompt)
-
-    response = chat_session.send_message(full_prompt)
-    generated_text = response.text.strip()
-
-    if AI_MEMORY_FEATURE:
-        user_memory.append({'prompt': prompt, 'response': generated_text})
-        await save_cached_memory(user_id, user_memory)
-
-    return generated_text
-
-
-"""
-This is the experimental STT function.
-"""
-
-if AI_STT_FEATURE:
-    import pyaudio
-    import wave
-    import io
-    import threading
-    from google.cloud import speech
-    import numpy as np
-
-    CHUNK = 1024
-    FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    RATE = 44100
-    INITIAL_THRESHOLD = 600
-    SILENCE_DURATION = 1
-    DEVICE_INDEX = 1
-    NOISE_BUFFER_SIZE = 30
-
-    p = pyaudio.PyAudio()
-
-    if DEVICE_INDEX is None or DEVICE_INDEX >= p.get_device_count():
-        for i in range(p.get_device_count()):
-            info = p.get_device_info_by_index(i)
-            print(f"Device ID: {i}, Device Name: {info['name']}")
-            print(f"Max Input Channels: {info['maxInputChannels']}")
-        logging.info("Please add your microphone's device ID to DEVICE_INDEX and run again.")
-        p.terminate()
-        exit(1)
-
-    frames = []
-    recording = False
-    dynamic_threshold = INITIAL_THRESHOLD
-    noise_buffer = []
-    last_audio_time = time.time()
-
-    def calculate_noise_level():
-        if not noise_buffer:
-            return INITIAL_THRESHOLD
-        return np.mean(noise_buffer)
-
-    async def transcribe_audio(audio_buffer):
-        try:
-            client = speech.SpeechClient()
-            audio_content = audio_buffer.getvalue()  # Read buffer content
-
-            audio = speech.RecognitionAudio(content=audio_content)
-            config = speech.RecognitionConfig(
-                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-                sample_rate_hertz=RATE,
-                language_code="en-US",
-            )
-
-            response = client.recognize(config=config, audio=audio)
-
-            for result in response.results:
-                logging.info("Transcript sent to Gemini API\n"
-                             f"{result.alternatives[0].transcript}")
-                response_text = await query_gemini_with_STT('owner', result.alternatives[0].transcript)
-                logging.info("Response from Gemini API: " + response_text)
-                clean_response = emoji.replace_emoji(response_text, replace='')
-                audio_file_buffer = synthesize_speech(clean_response)
-                logging.info("Generated speech audio buffer.")
-
-                tts_queue.append(audio_file_buffer)
-
-                if not is_playing:
-                    await play_next_in_queue()
-        except Exception as e:
-            logging.error(f"Error processing audio: {e}")
-
-    def process_audio(frames, channels, rate):
-        audio_buffer = io.BytesIO()
-        with wave.open(audio_buffer, 'wb') as wf:
-            wf.setnchannels(channels)
-            wf.setsampwidth(p.get_sample_size(FORMAT))
-            wf.setframerate(rate)
-            wf.writeframes(b''.join(frames))
-        audio_buffer.seek(0)  # Rewind buffer for reading
-
-        def run_transcribe():
-            asyncio.run(transcribe_audio(audio_buffer))
-
-        threading.Thread(target=run_transcribe).start()
-
-    def callback(in_data, frame_count, time_info, status):
-        global recording, frames, last_audio_time
-
-        audio_data = np.frombuffer(in_data, dtype=np.int16)
-        audio_level = np.max(np.abs(audio_data))
-
-        noise_buffer.append(audio_level)
-        if len(noise_buffer) > NOISE_BUFFER_SIZE:
-            noise_buffer.pop(0)
-
-        dynamic_threshold = calculate_noise_level() * 1.5
-
-        current_time = time.time()
-
-        if audio_level > dynamic_threshold:
-            last_audio_time = current_time
-            if not recording:
-                recording = True
-                logging.debug("Input detected. Recording...")
-
-        if recording:
-            frames.append(in_data)
-
-            if current_time - last_audio_time > SILENCE_DURATION:
-                recording = False
-                logging.info("Silence detected. Finished recording.")
-                threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
-                frames = []
-
-        return (in_data, pyaudio.paContinue)
-
-    def start_stt():
-        stream = p.open(format=FORMAT,
-                        channels=CHANNELS,
-                        rate=RATE,
-                        input=True,
-                        frames_per_buffer=CHUNK,
-                        input_device_index=DEVICE_INDEX,
-                        stream_callback=callback)
-        logging.info("Speech to text API started.")
-
-        try:
-            stream.start_stream()
-            while True:
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            logging.info("Speech to text API stopped.")
-        finally:
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
-
-    stt_thread = threading.Thread(target=start_stt)
-    stt_thread.start()
 
 try:
     bot.run()
