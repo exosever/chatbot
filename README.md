@@ -55,6 +55,7 @@
         <br>
         <li>Possibly redo standard-user set-up. Put all user viariables in the .env? 
             <br>This will make the CLI only for debugging and make it simpler to use.</li>
+        <li>Clean up and improve async and threaded operations</li>
     </ul>
     <br>
     <br>
