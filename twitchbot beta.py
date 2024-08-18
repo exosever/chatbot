@@ -129,7 +129,7 @@ setting the LOGGING level to DEBUG.
 --------------------------------------------------------------------------------
 """
 
-AI_WIKIPEDIA_FEATURE = False  # Wikipedia API keyword search
+AI_WIKIPEDIA_FEATURE = True  # Wikipedia API keyword search
 AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
 AI_MOODS_FEATURE = True  # AI moods based on interactions
 AI_MEMORY_FEATURE = True  # Database storage of AI memory
@@ -562,7 +562,7 @@ Additionally, cache the memory for faster loading
 
 if AI_MEMORY_FEATURE:
     import sqlite3
-    conn = sqlite3.connect('chatbot_memory.db', check_same_thread=False)
+    conn = sqlite3.connect('chatbot_memory.db', check_same_thread=True)
     cursor = conn.cursor()
     logging.info("Loaded persistent memory")
 
@@ -1005,7 +1005,7 @@ async def learning_flag(ctx):
 
 
 """
-This is the experimental STT Gemini query functions
+This are the experimental STT Gemini query functions
 """
 
 
@@ -1075,13 +1075,12 @@ async def query_gemini_with_STT(user_id, prompt):
 
 
 """
-This is the experimental SST function.
+This is the experimental STT function.
 """
 
 if AI_STT_FEATURE:
     import pyaudio
     import wave
-    import glob
     import io
     import threading
     from google.cloud import speech
@@ -1190,15 +1189,8 @@ if AI_STT_FEATURE:
                 logging.info("Silence detected. Finished recording.")
                 threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
                 frames = []
-                cleanup_old_files('.', max_files=10)
 
         return (in_data, pyaudio.paContinue)
-
-    def cleanup_old_files(directory, max_files=10):
-        files = sorted(glob.glob(os.path.join(directory, "stt_output.*.wav")), key=os.path.getmtime)
-        while len(files) > max_files:
-            os.remove(files.pop(0))
-            logging.debug("Removed old file.")
 
     def start_stt():
         stream = p.open(format=FORMAT,
