@@ -47,6 +47,7 @@
         <li>Possibly improve or replace LLM, may try a custom trained Gemini first.
         <br>The model functions well, but is very limited on knowledge.</li>
         <li>Can we go 100% open-source?</li>
+        <li>Ongoing testing of WikipediaAPI, Emotion Detection, Moods, and AI Memory</li>
     </ul>
     <br>
     <br>
