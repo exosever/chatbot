@@ -24,12 +24,12 @@
 <ul>
     <li><strong>Twitch Account Setup:</strong> Create a Twitch account for your chatbot and obtain the Client ID and OAuth token with read/write access:
         <ul>
-            <li>Client ID: Twitch Token Generator</li>
-            <li>OAuth Token: Twitch Developer Console</li>
+            <li>Client ID: <a href='https://twitchtokengenerator.com'>Twitch Token Generator</a></li>
+            <li>OAuth Token: <a href='https://dev.twitch.tv/console'>Twitch Developer Console</a></li>
         </ul>
         Ensure these credentials are for your bot account.
     </li>
-    <li><strong>Gemini API Key:</strong> Get an API key for the Google Gemini LLM from Google AI Studio.</li>
+    <li><strong>Gemini API Key:</strong> Get an API key for the Google Gemini LLM from <a href='aistudio.google.com'>Google AI Studio</a>.</li>
     <li><strong>Environment Configuration:</strong> Store your API keys and setup variables in a <code>.env</code> file. Ensure the file is correctly loaded using <code>load_dotenv()</code> in your script.</li>
     <li><strong>AI Instructions:</strong> Write the AI’s behavioral guidelines and specific response rules in the <code>chatbot_instructions.txt</code> file.</li>
     <li><strong>Launch the Bot:</strong> Run the script to start your chatbot. If you encounter any issues, set the logging level to DEBUG and check the logs for detailed error information.</li>
