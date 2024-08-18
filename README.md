@@ -73,8 +73,8 @@
     </ul>
     <h3>Improvements:</h3>
     <ul>
-        <li><strong>STT Audio:</strong> Implemented a self-improving noise gate that will adapt to background noise over time.
-            <br> - Also added a silence filter to enhance the accuracy of start/end of recording and save resources.
+        <li><strong>STT Audio:</strong> Introduced an adaptive noise gate that continuously improves its response to background noise over time, ensuring clearer audio capture.
+    <br> - Additionally, a silence filter was implemented to accurately detect the start and end of recordings, optimizing resource usage and enhancing transcription accuracy.</li>
         <li><strong>API Key Feedback:</strong> Added more feedback on specific API key failures to assist users in troubleshooting.</li>
         <li><strong>INFO Level Logging:</strong> Enhanced INFO level logging to not only debug issues but also to observe the AI's functions in real-time.</li>
         <li><strong>Authorized Users List:</strong> Added an authorized users list to manage access to administrative commands.</li>
