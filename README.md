@@ -1,7 +1,7 @@
 <body>
 <h1>Project Overview</h1>
 <p>This project is aimed at delivering a highly customizable, and easily configurable, Twitch AI chatbot that evolves and learns from individual user interactions. Powered by the Google Gemini 1.5 Flash model, the chatbot generates contextually aware text responses. It leverages SQLite for storing user-submitted prompts, allowing the chatbot to enhance its performance and relevance over time by referencing historical data.
-<br><strong>Our primary goal is to make this technology accessible by all user levels.</strong></p>
+<br><strong>Our primary goal is to make this technology accessible to all user levels.</strong></p>
 
 <h2>Features</h2>
 <ul>
