@@ -115,6 +115,21 @@ TTS_LANGUAGE = "en-US"
 TTS_PITCH = 6.0
 TTS_SPEAKING_RATE = 1.1
 
+"""
+STT CONFIGURATION
+Owner is your name, so the SST function knows who is talking to it.
+This is necessary if you wrote yourself into the chatbot_instructions by name.
+STT_INITIAL_THRESHOLD adjusts how loud the audio needs to be to trigger the STT function.
+STT_SILENCE_DURATION adjusts how long the bot will for silence before it sends the audio to STT.
+STT_DEVICE_INDEX adjusts which microphone the bot will use. Set this to None if you want it to print out a list of input devices.
+STT_NOISE_BUFFER_SIZE adjusts how many samples of "white noise" the bot will take before it dynamically adjusts its threshold.
+"""
+
+OWNER = "Josh"
+STT_INITIAL_THRESHOLD = 600
+STT_SILENCE_DURATION = 1.5
+STT_DEVICE_INDEX = 1
+STT_NOISE_BUFFER_SIZE = 30
 
 """
 --------------------------------------------------------------------------------
@@ -262,14 +277,16 @@ Initializes model, language, pitch, speed, etc.
 It also handles the audio buffer and queue
 """
 
+if AI_TTS_FEATURE or AI_STT_FEATURE:
+    import pyaudio
+    import wave
+
 if AI_TTS_FEATURE:
     import emoji
     from collections import deque
     from google.cloud import texttospeech
     from pydub import AudioSegment
     import io
-    import pyaudio
-    import wave
 
     tts_queue = deque()
     is_playing = False
@@ -333,7 +350,7 @@ if AI_TTS_FEATURE:
                             channels=wf.getnchannels(),
                             rate=wf.getframerate(),
                             output=True,
-                            output_device_index=9)
+                            output_STT_DEVICE_INDEX=9)
 
             data = wf.readframes(1024)
             while data:
@@ -359,10 +376,23 @@ async def query_gemini_with_STT(user_id, prompt):
         pass
     else:
         full_prompt = (
-            "Josh says:\n"
+            "This is the user's current prompt:\n"
             f"{prompt}\n\n"
         )
         if AI_MEMORY_FEATURE:
+
+            if user_id == OWNER:
+                cursor.execute("SELECT interactions FROM user_memory WHERE user_id = ?", (user_id,))
+                result = cursor.fetchone()
+                if not result:
+                    interactions = ""
+                    interactions.append(f"This user is {OWNER}")
+                cursor.execute('''INSERT OR REPLACE INTO user_memory
+                                (user_id, interactions)
+                                VALUES (?, ?)''', (user_id, json.dumps(interactions)))
+                conn.commit()
+                logging.info(f"Saved {OWNER} to persistent memory")
+
             user_memory = await load_cached_memory(user_id)
             previous_data = "\n".join(
                 ['User prompt: ' + interaction['prompt']
@@ -427,41 +457,45 @@ This is the experimental STT function.
 """
 
 if AI_STT_FEATURE:
-    import pyaudio
-    import wave
     import threading
     from google.cloud import speech
     import numpy as np
+    import keyboard
+
+    is_muted = False
+
+    def toggle_mute():
+        global is_muted
+        is_muted = not is_muted
+        print(f"Audio input is {'muted' if is_muted else 'active'}.")
+
+    keyboard.add_hotkey("ctrl+m", toggle_mute)
 
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 44100
-    INITIAL_THRESHOLD = 600
-    SILENCE_DURATION = 1.5
-    DEVICE_INDEX = 1
-    NOISE_BUFFER_SIZE = 30
 
     p = pyaudio.PyAudio()
 
-    if DEVICE_INDEX is None or DEVICE_INDEX >= p.get_device_count():
+    if STT_DEVICE_INDEX is None or STT_DEVICE_INDEX >= p.get_device_count():
         for i in range(p.get_device_count()):
             info = p.get_device_info_by_index(i)
             print(f"Device ID: {i}, Device Name: {info['name']}")
             print(f"Max Input Channels: {info['maxInputChannels']}")
-        logging.info("Please add your microphone's device ID to DEVICE_INDEX and run again.")
+        logging.info("Please add your microphone's device ID to STT_DEVICE_INDEX and run again.")
         p.terminate()
         exit(1)
 
     frames = []
     recording = False
-    dynamic_threshold = INITIAL_THRESHOLD
+    dynamic_threshold = STT_INITIAL_THRESHOLD
     noise_buffer = []
     last_audio_time = time.time()
 
     def calculate_noise_level():
         if not noise_buffer:
-            return INITIAL_THRESHOLD
+            return STT_INITIAL_THRESHOLD
         return np.mean(noise_buffer)
 
     async def transcribe_audio(audio_buffer):
@@ -481,7 +515,7 @@ if AI_STT_FEATURE:
             for result in response.results:
                 logging.info("Transcript sent to Gemini API\n"
                              f"{result.alternatives[0].transcript}")
-                response_text = await query_gemini_with_STT('Josh', result.alternatives[0].transcript)
+                response_text = await query_gemini_with_STT(OWNER, result.alternatives[0].transcript)
                 logging.info("Response from Gemini API: " + response_text)
                 clean_response = emoji.replace_emoji(response_text, replace='')
                 clean_response = clean_response.replace('"', ' ')
@@ -503,7 +537,7 @@ if AI_STT_FEATURE:
             wf.setsampwidth(p.get_sample_size(FORMAT))
             wf.setframerate(rate)
             wf.writeframes(b''.join(frames))
-        audio_buffer.seek(0)  # Rewind buffer for reading
+        audio_buffer.seek(0)
 
         def run_transcribe():
             asyncio.run(transcribe_audio(audio_buffer))
@@ -517,7 +551,7 @@ if AI_STT_FEATURE:
         audio_level = np.max(np.abs(audio_data))
 
         noise_buffer.append(audio_level)
-        if len(noise_buffer) > NOISE_BUFFER_SIZE:
+        if len(noise_buffer) > STT_NOISE_BUFFER_SIZE:
             noise_buffer.pop(0)
 
         dynamic_threshold = calculate_noise_level() * 1.5
@@ -525,15 +559,16 @@ if AI_STT_FEATURE:
         current_time = time.time()
 
         if audio_level > dynamic_threshold:
-            last_audio_time = current_time
-            if not recording:
-                recording = True
-                logging.debug("Input detected. Recording...")
+            if not is_muted:
+                last_audio_time = current_time
+                if not recording:
+                    recording = True
+                    logging.debug("Input detected. Recording...")
 
         if recording:
             frames.append(in_data)
 
-            if current_time - last_audio_time > SILENCE_DURATION:
+            if current_time - last_audio_time > STT_SILENCE_DURATION:
                 recording = False
                 logging.info("Silence detected. Finished recording.")
                 threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
@@ -547,7 +582,7 @@ if AI_STT_FEATURE:
                         rate=RATE,
                         input=True,
                         frames_per_buffer=CHUNK,
-                        input_device_index=DEVICE_INDEX,
+                        input_STT_DEVICE_INDEX=STT_DEVICE_INDEX,
                         stream_callback=callback)
         logging.info("Speech to text API started.")
 
@@ -1262,12 +1297,3 @@ except AttributeError:
 # Slow response
 # Sometimes cutting the spoken prompt in half, and responding to each one independantly
 # Not catching most of the spoken prompts
-
-# Referring to Josh in conversation, even though I am Josh
-# Make a function or button to mute audio input
-# Need STT portion to always know who is speaking
-
-# TTS is now broken
-"""
-Pyaudio and Wave imports from STT were not functioning in TTS
-"""
