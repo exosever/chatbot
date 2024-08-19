@@ -12,12 +12,6 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
 
 """
-Logging Configuration
-Change from INFO to DEBUG for more detailed logging
-"""
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
-"""
 --------------------------------------------------------------------------------
 CORE FUNCTIONALITY BELOW - ADVANCED USERS
 
@@ -39,7 +33,11 @@ if not load_dotenv('chatbot_variables.env'):
         file.write('# BOT CONFIGURATION - STANDARD USERS\n'
                    '# Below are the main configuration settings for the bot.\n'
                    '# Please adjust these variables to match your preferences and setup requirements.\n'
-                   '# Ensure that you review and modify the values according to your needs before running the bot.\n\n'
+                   '# Ensure that you review and modify the values '
+                   'according to your needs before running the bot.\n\n'
+
+                   '# Logging levels, default is INFO, change to DEBUG if you need additional feedback\n'
+                   'LOGGING_LEVEL = INFO\n\n'
 
                    'TWITCH_OAUTH_TOKEN = "13456"\n'
                    'TWITCH_CLIENT_ID = "123465"\n'
@@ -50,6 +48,11 @@ if not load_dotenv('chatbot_variables.env'):
                    '# AUTHORIZED_USERS_LIST is a list of USER NAMES\n'
                    '# to run admin commands from within twitch chat\n'
                    'AUTHORIZED_USERS_LIST=["TheJoshinatah", "DirtyDan"]\n\n'
+
+                   '# Filter Threshold for the LLM\n'
+                   '# Set to HIGH, MEDIUM, or LOW.\n'
+                   '# This works by blocking ONLY what you set it to, so HIGH only blocks HIGH risk!\n'
+                   'FILTER_THRESHOLD = HIGH\n\n'
 
                    '# BOT_TWITCH_NAME is the name of the "BOT" twitch account.\n'
                    '# BOT_NICKNAME is the name the bot will respond to.\n'
@@ -63,7 +66,8 @@ if not load_dotenv('chatbot_variables.env'):
                    '# to make a single adjustment to its emotional state.\n'
                    "ADJUSTMENT_WEIGHT=3\n\n"
 
-                   '# FEEDBACK_TIME_THRESHOLD adjusts how long the bot will wait before sending its feedback message.\n'
+                   '# FEEDBACK_TIME_THRESHOLD adjusts how long the bot '
+                   'will wait before sending its feedback message.\n'
                    "FEEDBACK_TIME_THRESHOLD=120\n\n"
 
                    '# AUTOMATED_RESPONSE_TIME_RANGE adjusts how long the bot will\n'
@@ -75,7 +79,9 @@ if not load_dotenv('chatbot_variables.env'):
 
                    '# AUTOMATED_MESSAGE is the message the bot will send after the provided TIME_RANGE\n'
                    "AUTOMATED_MESSAGE=("
-                   "f\"Hey There! I'm {BOT_NICKNAME}, your friendly neighborhood racoon! Feel free to chat with me by calling my name first ^.^ ie: {BOT_NICKNAME}, why is Josh such a great name?\n\n\")"
+                   "f\"Hey There! I'm {BOT_NICKNAME}, your friendly neighborhood racoon! "
+                   "Feel free to chat with me by calling my name first ^.^ ie:"
+                   " {BOT_NICKNAME}, why is Josh such a great name?\n\n\")"
 
                    '# TTS CONFIGURATION\n'
                    '# Using https://cloud.google.com/text-to-speech?hl=en to find your settings\n'
@@ -90,11 +96,16 @@ if not load_dotenv('chatbot_variables.env'):
                    '# STT CONFIGURATION\n'
                    '# Owner is your name, so the SST function knows who is talking to it.\n'
                    '# This is necessary if you wrote yourself into the chatbot_instructions by name.\n'
-                   '# STT_INITIAL_THRESHOLD adjusts how loud the audio needs to be to trigger the STT function.\n'
-                   '# STT_SILENCE_DURATION adjusts how long the bot will wait for silence before it sends the audio to STT.\n'
-                   '# INPUT_STT_DEVICE_INDEX adjusts which microphone the bot will use. Set this to None if you want it to print out a list of input devices.\n'
-                   '# STT_NOISE_BUFFER_SIZE adjusts how many samples of "white noise" the bot will take before it dynamically adjusts its threshold.\n'
-                   '# MUTE_KEY is a key combination to mute audio input to the STT system while the Flag is set to True.\n'
+                   '# STT_INITIAL_THRESHOLD adjusts how loud the audio '
+                   'needs to be to trigger the STT function.\n'
+                   '# STT_SILENCE_DURATION adjusts how long the bot will '
+                   'wait for silence before it sends the audio to STT.\n'
+                   '# INPUT_STT_DEVICE_INDEX adjusts which microphone the bot will use. '
+                   'Set this to None if you want it to print out a list of input devices.\n'
+                   '# STT_NOISE_BUFFER_SIZE adjusts how many samples of "white noise" '
+                   'the bot will take before it dynamically adjusts its threshold.\n'
+                   '# MUTE_KEY is a key combination to mute audio input '
+                   'to the STT system while the Flag is set to True.\n'
                    "OWNER='Josh'\n"
                    "STT_INITIAL_THRESHOLD=600\n"
                    "STT_SILENCE_DURATION=1.5\n"
@@ -155,6 +166,29 @@ AI_LEARNING_FEATURE = os.getenv('AI_LEARNING_FEATURE', 'false').lower() in ['tru
 AI_TTS_FEATURE = os.getenv('AI_TTS_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
 AI_STT_FEATURE = os.getenv('AI_STT_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
 MUTE_KEY = os.getenv('MUTE_KEY')
+LOGGING_LEVEL = os.getenv('LOGGING_LEVEL')
+
+
+"""
+Logging Configuration
+"""
+level_map = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL
+}
+LOGGING_LEVEL = level_map[LOGGING_LEVEL]
+logging.basicConfig(level=LOGGING_LEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
+
+threshold_map = {
+    'LOW': HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+    'MEDIUM': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    'HIGH': HarmBlockThreshold.BLOCK_ONLY_HIGH
+}
+
+FILTER_THRESHOLD = threshold_map[os.getenv('FILTER_THRESHOLD').upper()]
 
 if AI_TTS_FEATURE:
     google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -507,21 +541,21 @@ if AI_STT_FEATURE:
 
         current_time = time.time()
 
-        if audio_level > dynamic_threshold:
-            if not is_muted:
+        if not is_muted:
+            if audio_level > dynamic_threshold:
                 last_audio_time = current_time
                 if not recording:
                     recording = True
                     logging.debug("Input detected. Recording...")
 
-        if recording:
-            frames.append(in_data)
+            if recording:
+                frames.append(in_data)
 
-            if current_time - last_audio_time > STT_SILENCE_DURATION:
-                recording = False
-                logging.info("Silence detected. Finished recording.")
-                threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
-                frames = []
+                if current_time - last_audio_time > STT_SILENCE_DURATION:
+                    recording = False
+                    logging.info("Silence detected. Finished recording.")
+                    threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
+                    frames = []
 
         return (in_data, pyaudio.paContinue)
 
@@ -770,13 +804,13 @@ try:
         system_instruction=str(chatbot_instructions),
         safety_settings={
             HarmCategory.HARM_CATEGORY_HATE_SPEECH:
-            HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            FILTER_THRESHOLD,
             HarmCategory.HARM_CATEGORY_HARASSMENT:
-            HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            FILTER_THRESHOLD,
             HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
-            HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            FILTER_THRESHOLD,
             HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
-            HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            FILTER_THRESHOLD,
         }
     )
     logging.info("Loaded LLM model")
@@ -1243,8 +1277,7 @@ except AttributeError:
                   )
 input("Press ENTER to exit")
 
-# Can we get LOGGING and the FILTER_THRESHOLD to work in the .env?
-
+# Add performance timers to DEBUG mode so I can trace how long the bot takes per function?
 # Slow response
 # Sometimes cutting the spoken prompt in half, and responding to each one independantly
 # Not catching most of the spoken prompts
