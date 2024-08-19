@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 Logging Configuration
 Change from INFO to DEBUG for more detailed logging
 """
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 """
 --------------------------------------------------------------------------------
@@ -41,21 +41,20 @@ if not load_dotenv('chatbot_variables.env'):
                    '# Please adjust these variables to match your preferences and setup requirements.\n'
                    '# Ensure that you review and modify the values according to your needs before running the bot.\n\n'
 
+                   'TWITCH_OAUTH_TOKEN = "13456"\n'
+                   'TWITCH_CLIENT_ID = "123465"\n'
+                   'TWITCH_CHANNEL_NAME = "123456"\n'
+                   'GENAI_API_KEY = "13456"\n'
+                   'GOOGLE_APPLICATION_CREDENTIALS = "123456"\n\n'
+
                    '# AUTHORIZED_USERS_LIST is a list of USER NAMES\n'
                    '# to run admin commands from within twitch chat\n'
-                   "AUTHORIZED_USERS_LIST=['TheJoshinatah', 'DirtyDan']\n\n"
+                   'AUTHORIZED_USERS_LIST=["TheJoshinatah", "DirtyDan"]\n\n'
 
                    '# BOT_TWITCH_NAME is the name of the "BOT" twitch account.\n'
                    '# BOT_NICKNAME is the name the bot will respond to.\n'
                    "BOT_TWITCH_NAME='ultron9000'\n"
                    "BOT_NICKNAME='ultron'\n\n"
-
-                   '# FILTER_THRESHOLD adjusts the bot\'s response to harmful content.\n'
-                   '# BLOCK_ONLY_HIGH only blocks content with a HIGH risk.\n'
-                   '# BLOCK_ONLY_LOW only blocks content with a LOW risk.\n'
-                   '# BLOCK_ONLY_HIGH, BLOCK_ONLY_MEDIUM, BLOCK_ONLY_LOW, BLOCK_HIGH_AND_MEDIUM,\n'
-                   '# BLOCK_HIGH_AND_MEDIUM_AND_LOW, BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE\n'
-                   "FILTER_THRESHOLD=HarmBlockThreshold.BLOCK_ONLY_HIGH\n\n"
 
                    '# BOT_ONLINE_MESSAGE is the message that the bot will send when it comes online.\n'
                    "BOT_ONLINE_MESSAGE='Hello everyone! How are you all doing?'\n\n"
@@ -72,33 +71,36 @@ if not load_dotenv('chatbot_variables.env'):
                    '# It takes a RANGE in seconds (min, max)\n'
                    '# This time also affects how often the bot has the chance to become bored, curious,\n'
                    '# or the low chance of a random emotion.\n'
-                   "AUTOMATED_RESPONSE_TIME_RANGE=(600, 1200)\n\n"
+                   "AUTOMATED_RESPONSE_TIME_RANGE=[600, 1200]\n\n"
 
                    '# AUTOMATED_MESSAGE is the message the bot will send after the provided TIME_RANGE\n'
                    "AUTOMATED_MESSAGE=("
-                   "f\"Hey There! I'm {BOT_NICKNAME}, your friendly neighborhood racoon! Feel free to chat with me by calling my name first ^.^ ie: {BOT_NICKNAME}, why is Josh such a great name?\")"
+                   "f\"Hey There! I'm {BOT_NICKNAME}, your friendly neighborhood racoon! Feel free to chat with me by calling my name first ^.^ ie: {BOT_NICKNAME}, why is Josh such a great name?\n\n\")"
 
                    '# TTS CONFIGURATION\n'
                    '# Using https://cloud.google.com/text-to-speech?hl=en to find your settings\n'
+                   '# OUTPUT_TTS_DEVICE_INDEX adjusts which output the TTS will use\n'
                    "TTS_MODEL='en-US-Wavenet-I'\n"
                    "TTS_LANGUAGE='en-US'\n"
                    "TTS_PITCH=0.0\n"
-                   "TTS_SPEAKING_RATE=1.0\n\n"
+                   "TTS_SPEAKING_RATE=1.0\n"
+                   "OUTPUT_TTS_DEVICE_INDEX=1\n\n"
+
 
                    '# STT CONFIGURATION\n'
                    '# Owner is your name, so the SST function knows who is talking to it.\n'
                    '# This is necessary if you wrote yourself into the chatbot_instructions by name.\n'
                    '# STT_INITIAL_THRESHOLD adjusts how loud the audio needs to be to trigger the STT function.\n'
                    '# STT_SILENCE_DURATION adjusts how long the bot will wait for silence before it sends the audio to STT.\n'
-                   '# STT_DEVICE_INDEX adjusts which microphone the bot will use. Set this to None if you want it to print out a list of input devices.\n'
+                   '# INPUT_STT_DEVICE_INDEX adjusts which microphone the bot will use. Set this to None if you want it to print out a list of input devices.\n'
                    '# STT_NOISE_BUFFER_SIZE adjusts how many samples of "white noise" the bot will take before it dynamically adjusts its threshold.\n'
                    '# MUTE_KEY is a key combination to mute audio input to the STT system while the Flag is set to True.\n'
                    "OWNER='Josh'\n"
                    "STT_INITIAL_THRESHOLD=600\n"
                    "STT_SILENCE_DURATION=1.5\n"
-                   "STT_DEVICE_INDEX=1\n"
-                   "STT_NOISE_BUFFER_SIZE=30\n\n"
-                   "MUTE_KEY='ctrl + m'\n"
+                   "STT_NOISE_BUFFER_SIZE=30\n"
+                   "INPUT_STT_DEVICE_INDEX=1\n"
+                   "MUTE_KEY='ctrl + m'\n\n"
 
                    '# FEATURE FLAGS - STANDARD USERS\n'
                    '# The following flags are used to enable or disable certain features of the bot.\n'
@@ -126,34 +128,33 @@ TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
 GENAI_API_KEY = os.getenv('GENAI_API_KEY')
-LOGGING_LEVEL = os.getenv('LOGGING_LEVEL')
-AUTHORIZED_USERS_LIST = os.getenv('AUTHORIZED_USERS_LIST')
+AUTHORIZED_USERS_LIST = json.loads(os.getenv('AUTHORIZED_USERS_LIST', '[]'))
 BOT_TWITCH_NAME = os.getenv('BOT_TWITCH_NAME')
 BOT_NICKNAME = os.getenv('BOT_NICKNAME')
-FILTER_THRESHOLD = os.getenv('FILTER_THRESHOLD')
 BOT_ONLINE_MESSAGE = os.getenv('BOT_ONLINE_MESSAGE')
-ADJUSTMENT_WEIGHT = os.getenv('ADJUSTMENT_WEIGHT')
-FEEDBACK_TIME_THRESHOLD = os.getenv('FEEDBACK_TIME_THRESHOLD')
-AUTOMATED_RESPONSE_TIME_RANGE = os.getenv('AUTOMATED_RESPONSE_TIME_RANGE')
+ADJUSTMENT_WEIGHT = int(os.getenv('ADJUSTMENT_WEIGHT'))
+FEEDBACK_TIME_THRESHOLD = int(os.getenv('FEEDBACK_TIME_THRESHOLD'))
+AUTOMATED_RESPONSE_TIME_RANGE = tuple(json.loads(os.getenv('AUTOMATED_RESPONSE_TIME_RANGE', '[]')))
 AUTOMATED_MESSAGE = os.getenv('AUTOMATED_MESSAGE')
 TTS_MODEL = os.getenv('TTS_MODEL')
 TTS_LANGUAGE = os.getenv('TTS_LANGUAGE')
-TTS_PITCH = os.getenv('TTS_PITCH')
-TTS_SPEAKING_RATE = os.getenv('TTS_SPEAKING_RATE')
+TTS_PITCH = float(os.getenv('TTS_PITCH'))
+TTS_SPEAKING_RATE = float(os.getenv('TTS_SPEAKING_RATE'))
 OWNER = os.getenv('OWNER')
-STT_INITIAL_THRESHOLD = os.getenv('STT_INITIAL_THRESHOLD')
-STT_SILENCE_DURATION = os.getenv('STT_SILENCE_DURATION')
-STT_DEVICE_INDEX = os.getenv('STT_DEVICE_INDEX')
-STT_NOISE_BUFFER_SIZE = os.getenv('STT_NOISE_BUFFER_SIZE')
-AI_WIKIPEDIA_FEATURE = os.getenv('AI_WIKIPEDIA_FEATURE')
-AI_EMOTION_DETECTION_FEATURE = os.getenv('AI_EMOTION_DETECTION_FEATURE')
-AI_MOODS_FEATURE = os.getenv('AI_MOODS_FEATURE')
-AI_MEMORY_FEATURE = os.getenv('AI_MEMORY_FEATURE')
-AI_LEARNING_FEATURE = os.getenv('AI_LEARNING_FEATURE')
-AI_TTS_FEATURE = os.getenv('AI_TTS_FEATURE')
-AI_STT_FEATURE = os.getenv('AI_STT_FEATURE')
+STT_INITIAL_THRESHOLD = int(os.getenv('STT_INITIAL_THRESHOLD'))
+STT_SILENCE_DURATION = float(os.getenv('STT_SILENCE_DURATION'))
+INPUT_STT_DEVICE_INDEX = int(os.getenv('INPUT_STT_DEVICE_INDEX'))
+OUTPUT_TTS_DEVICE_INDEX = int(os.getenv('OUTPUT_TTS_DEVICE_INDEX'))
+STT_NOISE_BUFFER_SIZE = int(os.getenv('STT_NOISE_BUFFER_SIZE'))
+AI_WIKIPEDIA_FEATURE = os.getenv('AI_WIKIPEDIA_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+AI_EMOTION_DETECTION_FEATURE = os.getenv('AI_EMOTION_DETECTION_FEATURE', 'false').lower() in [
+    'true', '1', 't', 'y', 'yes']
+AI_MOODS_FEATURE = os.getenv('AI_MOODS_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+AI_MEMORY_FEATURE = os.getenv('AI_MEMORY_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+AI_LEARNING_FEATURE = os.getenv('AI_LEARNING_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+AI_TTS_FEATURE = os.getenv('AI_TTS_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+AI_STT_FEATURE = os.getenv('AI_STT_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
 MUTE_KEY = os.getenv('MUTE_KEY')
-
 
 if AI_TTS_FEATURE:
     google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -318,7 +319,8 @@ if AI_TTS_FEATURE:
             stream = p.open(format=pyaudio.paInt16,
                             channels=wf.getnchannels(),
                             rate=wf.getframerate(),
-                            output=True,)
+                            output=True,
+                            output_device_index=OUTPUT_TTS_DEVICE_INDEX)
 
             data = wf.readframes(1024)
             while data:
@@ -348,18 +350,6 @@ async def query_gemini_with_STT(user_id, prompt):
             f"{prompt}\n\n"
         )
         if AI_MEMORY_FEATURE:
-
-            if user_id == OWNER:
-                cursor.execute("SELECT interactions FROM user_memory WHERE user_id = ?", (user_id,))
-                result = cursor.fetchone()
-                if not result:
-                    interactions = ""
-                    interactions.append(f"This user is {OWNER}")
-                cursor.execute('''INSERT OR REPLACE INTO user_memory
-                                (user_id, interactions)
-                                VALUES (?, ?)''', (user_id, json.dumps(interactions)))
-                conn.commit()
-                logging.info(f"Saved {OWNER} to persistent memory")
 
             user_memory = await load_cached_memory(user_id)
             previous_data = "\n".join(
@@ -446,16 +436,6 @@ if AI_STT_FEATURE:
 
     p = pyaudio.PyAudio()
 
-    if STT_DEVICE_INDEX is None or STT_DEVICE_INDEX >= p.get_device_count():
-        for i in range(p.get_device_count()):
-            info = p.get_device_info_by_index(i)
-            print(f"Device ID: {i}, Device Name: {info['name']}")
-            print(f"Max Input Channels: {info['maxInputChannels']}")
-        logging.info("Please add your microphone's device ID to STT_DEVICE_INDEX and run again.")
-        p.terminate()
-        input("Press ENTER to exit")
-        exit(1)
-
     frames = []
     recording = False
     dynamic_threshold = STT_INITIAL_THRESHOLD
@@ -470,7 +450,7 @@ if AI_STT_FEATURE:
     async def transcribe_audio(audio_buffer):
         try:
             client = speech.SpeechClient()
-            audio_content = audio_buffer.getvalue()  # Read buffer content
+            audio_content = audio_buffer.getvalue()
 
             audio = speech.RecognitionAudio(content=audio_content)
             config = speech.RecognitionConfig(
@@ -551,7 +531,7 @@ if AI_STT_FEATURE:
                         rate=RATE,
                         input=True,
                         frames_per_buffer=CHUNK,
-                        input_STT_DEVICE_INDEX=STT_DEVICE_INDEX,
+                        input_device_index=INPUT_STT_DEVICE_INDEX,
                         stream_callback=callback)
         logging.info("Speech to text API started.")
 
@@ -790,13 +770,13 @@ try:
         system_instruction=str(chatbot_instructions),
         safety_settings={
             HarmCategory.HARM_CATEGORY_HATE_SPEECH:
-            FILTER_THRESHOLD,
+            HarmBlockThreshold.BLOCK_ONLY_HIGH,
             HarmCategory.HARM_CATEGORY_HARASSMENT:
-            FILTER_THRESHOLD,
+            HarmBlockThreshold.BLOCK_ONLY_HIGH,
             HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
-            FILTER_THRESHOLD,
+            HarmBlockThreshold.BLOCK_ONLY_HIGH,
             HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
-            FILTER_THRESHOLD,
+            HarmBlockThreshold.BLOCK_ONLY_HIGH,
         }
     )
     logging.info("Loaded LLM model")
@@ -1262,3 +1242,9 @@ except AttributeError:
                   "Please check your Twitch CLIENT ID and OAUTH Keys and try again."
                   )
 input("Press ENTER to exit")
+
+# Can we get LOGGING and the FILTER_THRESHOLD to work in the .env?
+
+# Slow response
+# Sometimes cutting the spoken prompt in half, and responding to each one independantly
+# Not catching most of the spoken prompts
