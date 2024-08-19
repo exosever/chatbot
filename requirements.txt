@@ -37,6 +37,7 @@ iso8601==2.1.0
 Jinja2==3.1.4
 joblib==1.4.2
 keras==3.5.0
+keyboard==0.13.5
 libclang==18.1.1
 Markdown==3.6
 markdown-it-py==3.0.0
