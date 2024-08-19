@@ -44,9 +44,11 @@
     <br>
     <h1>Upcoming Updates and Features</h1>
     <ul>
-        <li>Possibly redo standard-user set-up. Put all user variables in the .env? 
-        <br>This will make the CLI only for debugging and make it simpler to use.
-        <br>Also, redo the instructions. Now that it is fully released, make it simpler for new users to implement.</li>
+        <li><s>Possibly redo standard-user set-up. Put all user variables in the .env? 
+        <br>This will make the CLI only for debugging and make it simpler to use.</s>
+        <br>- Added all necessary configurables to .env for easy of use. Added a .bat to run the script
+        <br><s>Also, redo the instructions. Now that it is fully released, make it simpler for new users to implement.</s>
+        <br>Will write a detailed instructional manual</br></li>
         <li>Possibly improve or replace LLM, may try a custom trained Gemini first.
         <br>The model functions well, but is very limited on knowledge.</li>
         <li>Can we go 100% open-source?</li>
