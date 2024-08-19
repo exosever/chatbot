@@ -11,149 +11,11 @@ from twitchio.ext import commands
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
 
-
 """
 Logging Configuration
 Change from INFO to DEBUG for more detailed logging
 """
-logging.basicConfig(level=logging.
-                    INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-"""
---------------------------------------------------------------------------------
-BOT CONFIGURATION - STANDARD USERS
-
-Below are the main configuration settings for the bot.
-Please adjust these variables to match your preferences and setup requirements.
-
-Ensure that you review and modify the values according to your needs before running the bot.
-
---------------------------------------------------------------------------------
-"""
-
-
-"""
-AUTHORIZED_USERS_LIST is a list of USER IDs you want to have access
-to run admin commands from within twitch chat
-I recommend using your own user ID, or someone you trust
-"""
-
-AUTHORIZED_USERS_LIST = ['123456789', '987654321']
-
-"""
-BOT_TWITCH_NAME is the name of the "BOT" twitch account.
-BOT_NICKNAME is the name the bot will respond to.
-"""
-BOT_TWITCH_NAME = 'chesterbot9000'
-BOT_NICKNAME = 'chester'
-
-
-"""
-FILTER_THRESHOLD adjusts the bot's response to harmful content.
-BLOCK_ONLY_HIGH only blocks content with a HIGH risk.
-BLOCK_ONLY_LOW only blocks content with a LOW risk.
-"""
-# BLOCK_ONLY_HIGH, BLOCK_ONLY_MEDIUM, BLOCK_ONLY_LOW, BLOCK_HIGH_AND_MEDIUM,
-# BLOCK_HIGH_AND_MEDIUM_AND_LOW, BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE
-FILTER_THRESHOLD = HarmBlockThreshold.BLOCK_ONLY_HIGH
-
-
-"""
-BOT_ONLINE_MESSAGE is the message that the bot will send when it comes onine.
-"""
-BOT_ONLINE_MESSAGE = 'Hello everyone! How are you all doing?'
-
-
-"""
-ADJUSTMENT_WEIGHT defines the amount of change required for the bot
-to make a single adjustment to its emotional state.
-This is done by adding or subtracting the positive or negative
-stimuli until the positive or negative WEIGHT is met.
-Then a single emotional adjustment is made.
-STIMULI are either positive or negative user feedback, or positive or
-negative emotional analysis from user input.
-"""
-ADJUSTMENT_WEIGHT = 3
-
-
-"""
-FEEDBACK_TIME_THRESHOLD adjusts how long the bot will wait before sending it's feedback message.
-"""
-FEEDBACK_TIME_THRESHOLD = 120
-
-
-"""
-AUTOMATED_RESPONSE_TIME_RANGE adjusts how long the bot will
-wait before sending it's automated response.
-It takes a RANGE in seconds (min, max)
-This time also affects how often the bot has the chance to become bored, curious,
-or the low chance of a random emotion.
-"""
-AUTOMATED_RESPONSE_TIME_RANGE = (600, 1200)
-
-
-"""
-AUTOMATED_MESSAGE is the message the bot will send after the provided TIME_RANGE
-"""
-AUTOMATED_MESSAGE = (
-    f"Hey There! I'm {BOT_NICKNAME}, "
-    "your friendly neighborhood racoon! "
-    "Feel free to chat with me "
-    "by calling my name first ^.^ "
-    f"ie: {BOT_NICKNAME}, why is Josh such a great name?"
-)
-
-
-"""
-TTS CONFIGURATION
-Using https://cloud.google.com/text-to-speech?hl=en to find your settings
-
-"""
-
-TTS_MODEL = "en-US-Wavenet-I"
-TTS_LANGUAGE = "en-US"
-TTS_PITCH = 6.0
-TTS_SPEAKING_RATE = 1.0
-
-"""
-STT CONFIGURATION
-Owner is your name, so the SST function knows who is talking to it.
-This is necessary if you wrote yourself into the chatbot_instructions by name.
-STT_INITIAL_THRESHOLD adjusts how loud the audio needs to be to trigger the STT function.
-STT_SILENCE_DURATION adjusts how long the bot will for silence before it sends the audio to STT.
-STT_DEVICE_INDEX adjusts which microphone the bot will use. Set this to None if you want it to print out a list of input devices.
-STT_NOISE_BUFFER_SIZE adjusts how many samples of "white noise" the bot will take before it dynamically adjusts it's threshold.
-"""
-
-OWNER = "Josh"
-STT_INITIAL_THRESHOLD = 600
-STT_SILENCE_DURATION = 1.5
-STT_DEVICE_INDEX = 1
-STT_NOISE_BUFFER_SIZE = 30
-
-"""
---------------------------------------------------------------------------------
-FEATURE FLAGS - STANDARD USERS
-
-The following flags are used to enable or disable certain features of the bot.
-Use this to tailor the bot to your needs, to free up system resources,
-or to minimize network usage.
-These flags can also assist with DEBUGGING problems, along with
-setting the LOGGING level to DEBUG.
-
---------------------------------------------------------------------------------
-"""
-
-AI_WIKIPEDIA_FEATURE = True  # Wikipedia API keyword search
-AI_EMOTION_DETECTION_FEATURE = True  # AI analysis of user emotions
-AI_MOODS_FEATURE = True  # AI moods based on interactions
-AI_MEMORY_FEATURE = True  # Database storage of AI memory
-AI_LEARNING_FEATURE = True  # AI learning from user feedback
-AI_TTS_FEATURE = True  # TTS generation of AI responses
-AI_STT_FEATURE = True  # SST API for speech recognition. TTS API is required.
-
-if AI_STT_FEATURE and not AI_TTS_FEATURE:
-    AI_TTS_FEATURE = True
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 """
 --------------------------------------------------------------------------------
@@ -167,22 +29,96 @@ alter the bot's fundamental behavior.
 --------------------------------------------------------------------------------
 """
 
-
 """
-These are the environmental variables for the API keys.
+These are the environmental variables for the API keys and other bot settings.
 All of these variables should be stored in your .env file
 """
 
 if not load_dotenv('chatbot_variables.env'):
     with open('chatbot_variables.env', 'w') as file:
-        file.write('TWITCH_OAUTH_TOKEN=\n'
-                   'TWITCH_CLIENT_ID=\n'
-                   'GENAI_API_KEY=\n'
-                   'TWITCH_CHANNEL_NAME=\n'
-                   'GOOGLE_APPLICATION_CREDENTIALS=\n')
+        file.write('# BOT CONFIGURATION - STANDARD USERS\n'
+                   '# Below are the main configuration settings for the bot.\n'
+                   '# Please adjust these variables to match your preferences and setup requirements.\n'
+                   '# Ensure that you review and modify the values according to your needs before running the bot.\n\n'
+
+                   '# AUTHORIZED_USERS_LIST is a list of USER NAMES\n'
+                   '# to run admin commands from within twitch chat\n'
+                   "AUTHORIZED_USERS_LIST=['TheJoshinatah', 'DirtyDan']\n\n"
+
+                   '# BOT_TWITCH_NAME is the name of the "BOT" twitch account.\n'
+                   '# BOT_NICKNAME is the name the bot will respond to.\n'
+                   "BOT_TWITCH_NAME='ultron9000'\n"
+                   "BOT_NICKNAME='ultron'\n\n"
+
+                   '# FILTER_THRESHOLD adjusts the bot\'s response to harmful content.\n'
+                   '# BLOCK_ONLY_HIGH only blocks content with a HIGH risk.\n'
+                   '# BLOCK_ONLY_LOW only blocks content with a LOW risk.\n'
+                   '# BLOCK_ONLY_HIGH, BLOCK_ONLY_MEDIUM, BLOCK_ONLY_LOW, BLOCK_HIGH_AND_MEDIUM,\n'
+                   '# BLOCK_HIGH_AND_MEDIUM_AND_LOW, BLOCK_HIGH_AND_MEDIUM_AND_LOW_AND_NONE\n'
+                   "FILTER_THRESHOLD=HarmBlockThreshold.BLOCK_ONLY_HIGH\n\n"
+
+                   '# BOT_ONLINE_MESSAGE is the message that the bot will send when it comes online.\n'
+                   "BOT_ONLINE_MESSAGE='Hello everyone! How are you all doing?'\n\n"
+
+                   '# ADJUSTMENT_WEIGHT defines the amount of change required for the bot\n'
+                   '# to make a single adjustment to its emotional state.\n'
+                   "ADJUSTMENT_WEIGHT=3\n\n"
+
+                   '# FEEDBACK_TIME_THRESHOLD adjusts how long the bot will wait before sending its feedback message.\n'
+                   "FEEDBACK_TIME_THRESHOLD=120\n\n"
+
+                   '# AUTOMATED_RESPONSE_TIME_RANGE adjusts how long the bot will\n'
+                   '# wait before sending its automated response.\n'
+                   '# It takes a RANGE in seconds (min, max)\n'
+                   '# This time also affects how often the bot has the chance to become bored, curious,\n'
+                   '# or the low chance of a random emotion.\n'
+                   "AUTOMATED_RESPONSE_TIME_RANGE=(600, 1200)\n\n"
+
+                   '# AUTOMATED_MESSAGE is the message the bot will send after the provided TIME_RANGE\n'
+                   "AUTOMATED_MESSAGE=("
+                   "f\"Hey There! I'm {BOT_NICKNAME}, your friendly neighborhood racoon! Feel free to chat with me by calling my name first ^.^ ie: {BOT_NICKNAME}, why is Josh such a great name?\")"
+
+                   '# TTS CONFIGURATION\n'
+                   '# Using https://cloud.google.com/text-to-speech?hl=en to find your settings\n'
+                   "TTS_MODEL='en-US-Wavenet-I'\n"
+                   "TTS_LANGUAGE='en-US'\n"
+                   "TTS_PITCH=0.0\n"
+                   "TTS_SPEAKING_RATE=1.0\n\n"
+
+                   '# STT CONFIGURATION\n'
+                   '# Owner is your name, so the SST function knows who is talking to it.\n'
+                   '# This is necessary if you wrote yourself into the chatbot_instructions by name.\n'
+                   '# STT_INITIAL_THRESHOLD adjusts how loud the audio needs to be to trigger the STT function.\n'
+                   '# STT_SILENCE_DURATION adjusts how long the bot will wait for silence before it sends the audio to STT.\n'
+                   '# STT_DEVICE_INDEX adjusts which microphone the bot will use. Set this to None if you want it to print out a list of input devices.\n'
+                   '# STT_NOISE_BUFFER_SIZE adjusts how many samples of "white noise" the bot will take before it dynamically adjusts its threshold.\n'
+                   '# MUTE_KEY is a key combination to mute audio input to the STT system while the Flag is set to True.\n'
+                   "OWNER='Josh'\n"
+                   "STT_INITIAL_THRESHOLD=600\n"
+                   "STT_SILENCE_DURATION=1.5\n"
+                   "STT_DEVICE_INDEX=1\n"
+                   "STT_NOISE_BUFFER_SIZE=30\n\n"
+                   "MUTE_KEY='ctrl + m'\n"
+
+                   '# FEATURE FLAGS - STANDARD USERS\n'
+                   '# The following flags are used to enable or disable certain features of the bot.\n'
+                   '# Use this to tailor the bot to your needs, to free up system resources,\n'
+                   '# or to minimize network usage.\n'
+                   '# These flags can also assist with DEBUGGING problems, along with\n'
+                   '# setting the LOGGING level to DEBUG.\n'
+                   "AI_WIKIPEDIA_FEATURE=True\n"
+                   "AI_EMOTION_DETECTION_FEATURE=True\n"
+                   "AI_MOODS_FEATURE=True\n"
+                   "AI_MEMORY_FEATURE=True\n"
+                   "AI_LEARNING_FEATURE=True\n"
+                   "AI_TTS_FEATURE=True\n"
+                   "AI_STT_FEATURE=True\n"
+                   )
+
     print("No .env detected or file is empty. "
-          "chatbot_variables.env created. "
+          "chatbot_variables.env created with default values. "
           "Please add your API keys to this file and run again.")
+    input("Press ENTER to exit")
     exit()
 
 
@@ -190,6 +126,34 @@ TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
 GENAI_API_KEY = os.getenv('GENAI_API_KEY')
+LOGGING_LEVEL = os.getenv('LOGGING_LEVEL')
+AUTHORIZED_USERS_LIST = os.getenv('AUTHORIZED_USERS_LIST')
+BOT_TWITCH_NAME = os.getenv('BOT_TWITCH_NAME')
+BOT_NICKNAME = os.getenv('BOT_NICKNAME')
+FILTER_THRESHOLD = os.getenv('FILTER_THRESHOLD')
+BOT_ONLINE_MESSAGE = os.getenv('BOT_ONLINE_MESSAGE')
+ADJUSTMENT_WEIGHT = os.getenv('ADJUSTMENT_WEIGHT')
+FEEDBACK_TIME_THRESHOLD = os.getenv('FEEDBACK_TIME_THRESHOLD')
+AUTOMATED_RESPONSE_TIME_RANGE = os.getenv('AUTOMATED_RESPONSE_TIME_RANGE')
+AUTOMATED_MESSAGE = os.getenv('AUTOMATED_MESSAGE')
+TTS_MODEL = os.getenv('TTS_MODEL')
+TTS_LANGUAGE = os.getenv('TTS_LANGUAGE')
+TTS_PITCH = os.getenv('TTS_PITCH')
+TTS_SPEAKING_RATE = os.getenv('TTS_SPEAKING_RATE')
+OWNER = os.getenv('OWNER')
+STT_INITIAL_THRESHOLD = os.getenv('STT_INITIAL_THRESHOLD')
+STT_SILENCE_DURATION = os.getenv('STT_SILENCE_DURATION')
+STT_DEVICE_INDEX = os.getenv('STT_DEVICE_INDEX')
+STT_NOISE_BUFFER_SIZE = os.getenv('STT_NOISE_BUFFER_SIZE')
+AI_WIKIPEDIA_FEATURE = os.getenv('AI_WIKIPEDIA_FEATURE')
+AI_EMOTION_DETECTION_FEATURE = os.getenv('AI_EMOTION_DETECTION_FEATURE')
+AI_MOODS_FEATURE = os.getenv('AI_MOODS_FEATURE')
+AI_MEMORY_FEATURE = os.getenv('AI_MEMORY_FEATURE')
+AI_LEARNING_FEATURE = os.getenv('AI_LEARNING_FEATURE')
+AI_TTS_FEATURE = os.getenv('AI_TTS_FEATURE')
+AI_STT_FEATURE = os.getenv('AI_STT_FEATURE')
+MUTE_KEY = os.getenv('MUTE_KEY')
+
 
 if AI_TTS_FEATURE:
     google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -198,15 +162,20 @@ if AI_TTS_FEATURE:
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(
             os.getcwd(), google_credentials_path)
     else:
-        print("No Google credentials found in chatbot_variables.env.")
-        print("Please add your Google credentials to chatbot_variables.env and run again.")
+        print("No Gemini credentials found in chatbot_variables.env.")
+        print("Please add your Gemini credentials to chatbot_variables.env and run again.")
+        input("Press ENTER to exit")
         exit()
 
 if not all([TWITCH_OAUTH_TOKEN, TWITCH_CLIENT_ID, TWITCH_CHANNEL_NAME, GENAI_API_KEY]):
     print("Please verify all API keys are present in chatbot_variables.env and run again.")
+    input("Press ENTER to exit")
     exit()
 
 genai.configure(api_key=GENAI_API_KEY)
+
+if AI_STT_FEATURE and not AI_TTS_FEATURE:
+    AI_TTS_FEATURE = True
 
 """
 load the generation config from a JSON file
@@ -331,7 +300,7 @@ if AI_TTS_FEATURE:
             audio_buffer = tts_queue.popleft()
             is_playing = True
             play_audio_from_buffer(audio_buffer)
-            audio_buffer.close()  # Close the buffer after playback
+            audio_buffer.close()
 
         is_playing = False
 
@@ -468,7 +437,7 @@ if AI_STT_FEATURE:
         is_muted = not is_muted
         print(f"Audio input is {'muted' if is_muted else 'active'}.")
 
-    keyboard.add_hotkey("ctrl+m", toggle_mute)
+    keyboard.add_hotkey(MUTE_KEY, toggle_mute)
 
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
@@ -484,6 +453,7 @@ if AI_STT_FEATURE:
             print(f"Max Input Channels: {info['maxInputChannels']}")
         logging.info("Please add your microphone's device ID to STT_DEVICE_INDEX and run again.")
         p.terminate()
+        input("Press ENTER to exit")
         exit(1)
 
     frames = []
@@ -1204,7 +1174,7 @@ BOT CONFIGURATION - ADVANCED USERS
 --- BOT COMMANDS ---
 
 These are the bot commands
-Those with if.ctx.author.ud in AUTHORIZED_USERS_LIST are authorized user only commands
+Those with if.ctx.author.name in AUTHORIZED_USERS_LIST are authorized user only commands
 
 --------------------------------------------------------------------------------
 """
@@ -1240,49 +1210,49 @@ if AI_LEARNING_FEATURE:
 @ bot.command(name='Wikipedia')
 async def wikipedia_flag(ctx):
     global AI_WIKIPEDIA_FEATURE
-    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+    if ctx.author.name in AUTHORIZED_USERS_LIST:
         AI_WIKIPEDIA_FEATURE = not AI_WIKIPEDIA_FEATURE
 
 
 @ bot.command(name='TTS')
 async def TTS_flag(ctx):
     global AI_TTS_FEATURE
-    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+    if ctx.author.name in AUTHORIZED_USERS_LIST:
         AI_TTS_FEATURE = not AI_TTS_FEATURE
 
 
 @ bot.command(name='STT')
 async def STT_flag(ctx):
     global AI_STT_FEATURE
-    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+    if ctx.author.name in AUTHORIZED_USERS_LIST:
         AI_STT_FEATURE = not AI_STT_FEATURE
 
 
 @ bot.command(name='Memory')
 async def memory_flag(ctx):
     global AI_MEMORY_FEATURE
-    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+    if ctx.author.name in AUTHORIZED_USERS_LIST:
         AI_MEMORY_FEATURE = not AI_MEMORY_FEATURE
 
 
 @ bot.command(name='Moods')
 async def moods_flag(ctx):
     global AI_MOODS_FEATURE
-    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+    if ctx.author.name in AUTHORIZED_USERS_LIST:
         AI_MOODS_FEATURE = not AI_MOODS_FEATURE
 
 
 @ bot.command(name='Detection')
 async def emotion_detection_flag(ctx):
     global AI_EMOTION_DETECTION_FEATURE
-    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+    if ctx.author.name in AUTHORIZED_USERS_LIST:
         AI_EMOTION_DETECTION_FEATURE = not AI_EMOTION_DETECTION_FEATURE
 
 
 @ bot.command(name='Learning')
 async def learning_flag(ctx):
     global AI_LEARNING_FEATURE
-    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+    if ctx.author.name in AUTHORIZED_USERS_LIST:
         AI_LEARNING_FEATURE = not AI_LEARNING_FEATURE
 
 try:
@@ -1291,3 +1261,4 @@ except AttributeError:
     logging.error("Error running bot:\n"
                   "Please check your Twitch CLIENT ID and OAUTH Keys and try again."
                   )
+input("Press ENTER to exit")
