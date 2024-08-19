@@ -115,6 +115,21 @@ TTS_LANGUAGE = "en-US"
 TTS_PITCH = 6.0
 TTS_SPEAKING_RATE = 1.0
 
+"""
+STT CONFIGURATION
+Owner is your name, so the SST function knows who is talking to it.
+This is necessary if you wrote yourself into the chatbot_instructions by name.
+STT_INITIAL_THRESHOLD adjusts how loud the audio needs to be to trigger the STT function.
+STT_SILENCE_DURATION adjusts how long the bot will for silence before it sends the audio to STT.
+STT_DEVICE_INDEX adjusts which microphone the bot will use. Set this to None if you want it to print out a list of input devices.
+STT_NOISE_BUFFER_SIZE adjusts how many samples of "white noise" the bot will take before it dynamically adjusts it's threshold.
+"""
+
+OWNER = "Josh"
+STT_INITIAL_THRESHOLD = 600
+STT_SILENCE_DURATION = 1.5
+STT_DEVICE_INDEX = 1
+STT_NOISE_BUFFER_SIZE = 30
 
 """
 --------------------------------------------------------------------------------
@@ -262,6 +277,10 @@ Initializes model, language, pitch, speed, etc.
 It also handles the audio buffer and queue
 """
 
+if AI_TTS_FEATURE or AI_STT_FEATURE:
+    import pyaudio
+    import wave
+
 if AI_TTS_FEATURE:
     import emoji
     from collections import deque
@@ -317,9 +336,8 @@ if AI_TTS_FEATURE:
         is_playing = False
 
     def play_audio_from_buffer(audio_buffer):
-        audio_buffer.seek(0)  # Ensure buffer is at the start
+        audio_buffer.seek(0)
 
-        # Convert MP3 to PCM
         audio_segment = AudioSegment.from_mp3(audio_buffer)
         pcm_buffer = io.BytesIO()
         audio_segment.export(pcm_buffer, format="wav")
@@ -352,65 +370,85 @@ async def query_gemini_with_STT(user_id, prompt):
     global message_count
     chat_session = model.start_chat(history=[])
 
-    full_prompt = (
-        "This is the user's current prompt:\n"
-        f"{prompt}\n\n"
-    )
-    if AI_MEMORY_FEATURE:
-        user_memory = await load_cached_memory(user_id)
-        previous_data = "\n".join(
-            ['User prompt: ' + interaction['prompt']
-             + " Generated Response:" + interaction['response']
-                for interaction in user_memory])
-        full_prompt += ("Here is some previous data from the user to keep in mind:\n"
-                        f"{previous_data}\n\n")
+    if prompt == '' or prompt is None or prompt == ' ':
+        logging.info("Prompt is empty, skipping STT query")
+        pass
+    else:
+        full_prompt = (
+            "This is the user's current prompt:\n"
+            f"{prompt}\n\n"
+        )
+        if AI_MEMORY_FEATURE:
 
-    if AI_EMOTION_DETECTION_FEATURE:
-        emotion_analysis = emotion_classifier(prompt)
-        detected_emotion = emotion_analysis[0]['label']
-        emotion_confidence = emotion_analysis[0]['score']
-        full_prompt += (f"Here is the current emotional state of the bot: \n{
-                        mood_instructions}\n\n")
+            if user_id == OWNER:
+                cursor.execute("SELECT interactions FROM user_memory WHERE user_id = ?", (user_id,))
+                result = cursor.fetchone()
+                if not result:
+                    interactions = ""
+                    interactions.append(f"This user is {OWNER}")
+                cursor.execute('''INSERT OR REPLACE INTO user_memory
+                                (user_id, interactions)
+                                VALUES (?, ?)''', (user_id, json.dumps(interactions)))
+                conn.commit()
+                logging.info(f"Saved {OWNER} to persistent memory")
 
-    if AI_MOODS_FEATURE:
+            user_memory = await load_cached_memory(user_id)
+            previous_data = "\n".join(
+                ['User prompt: ' + interaction['prompt']
+                 + " Generated Response:" + interaction['response']
+                    for interaction in user_memory])
+            full_prompt += ("Here is some previous data from the user to keep in mind:\n"
+                            f"{previous_data}\n\n")
+
         if AI_EMOTION_DETECTION_FEATURE:
-            adjust_emotional_state_analysis(detected_emotion)
-        print(emotional_states[current_emotion_index])
-        print(mood_instructions)
-        full_prompt += ("The user seems to be feeling "
-                        f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
-                        "Please respond in a way that reflects this mood.\n\n")
+            emotion_analysis = emotion_classifier(prompt)
+            detected_emotion = emotion_analysis[0]['label']
+            emotion_confidence = emotion_analysis[0]['score']
+            logging.debug(f"Detected emotion: {detected_emotion}, confidence: {emotion_confidence}")
+            full_prompt += (f"Here is the current emotional state of the bot: \n{
+                            mood_instructions}\n\n")
 
-    if AI_WIKIPEDIA_FEATURE:
-        try:
-            if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
-                prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
-            elif prompt.lower().startswith(BOT_NICKNAME.lower()):
-                prompt = prompt[len(BOT_NICKNAME):].strip()
+        if AI_MOODS_FEATURE:
+            if AI_EMOTION_DETECTION_FEATURE:
+                adjust_emotional_state_analysis(detected_emotion)
+            print(emotional_states[current_emotion_index])
+            print(mood_instructions)
+            full_prompt += ("The user seems to be feeling "
+                            f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
+                            "Please respond in a way that reflects this mood.\n\n")
 
-            wiki_summary = await fetch_information(prompt)
+        if AI_WIKIPEDIA_FEATURE:
+            try:
+                if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
+                    prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
+                elif prompt.lower().startswith(BOT_NICKNAME.lower()):
+                    prompt = prompt[len(BOT_NICKNAME):].strip()
 
-            if wiki_summary:
-                full_prompt += (
-                    "Additionally, here is some related factual "
-                    "information from Wikipedia to consider in your response:\n"
-                    f"{wiki_summary}\n\n"
-                )
+                wiki_summary = await fetch_information(prompt)
 
-        except Exception as e:
-            logging.error(f"Error in query processing: {e}")
-            return "Sorry, I'm having trouble with the AI service right now."
+                if wiki_summary:
+                    full_prompt += (
+                        "Additionally, here is some related factual "
+                        "information from Wikipedia to consider in your response:\n"
+                        f"{wiki_summary}\n\n"
+                    )
 
-        logging.info("Full prompt: " + full_prompt)
+            except Exception as e:
+                logging.error(f"Error in query processing: {e}")
+                return "Sorry, I'm having trouble with the AI service right now."
 
-    response = chat_session.send_message(full_prompt)
-    generated_text = response.text.strip()
+            logging.info("Full prompt: " + full_prompt)
 
-    if AI_MEMORY_FEATURE:
-        user_memory.append({'prompt': prompt, 'response': generated_text})
-        await save_cached_memory(user_id, user_memory)
+        full_prompt += "\n\nKeep all formulated responses under 500 characters."
 
-    return generated_text
+        response = chat_session.send_message(full_prompt)
+        generated_text = response.text.strip()
+
+        if AI_MEMORY_FEATURE:
+            user_memory.append({'prompt': prompt, 'response': generated_text})
+            await save_cached_memory(user_id, user_memory)
+
+        return generated_text
 
 
 """
@@ -418,41 +456,45 @@ This is the experimental STT function.
 """
 
 if AI_STT_FEATURE:
-    import pyaudio
-    import wave
     import threading
     from google.cloud import speech
     import numpy as np
+    import keyboard
+
+    is_muted = False
+
+    def toggle_mute():
+        global is_muted
+        is_muted = not is_muted
+        print(f"Audio input is {'muted' if is_muted else 'active'}.")
+
+    keyboard.add_hotkey("ctrl+m", toggle_mute)
 
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 44100
-    INITIAL_THRESHOLD = 600
-    SILENCE_DURATION = 1
-    DEVICE_INDEX = 1
-    NOISE_BUFFER_SIZE = 30
 
     p = pyaudio.PyAudio()
 
-    if DEVICE_INDEX is None or DEVICE_INDEX >= p.get_device_count():
+    if STT_DEVICE_INDEX is None or STT_DEVICE_INDEX >= p.get_device_count():
         for i in range(p.get_device_count()):
             info = p.get_device_info_by_index(i)
             print(f"Device ID: {i}, Device Name: {info['name']}")
             print(f"Max Input Channels: {info['maxInputChannels']}")
-        logging.info("Please add your microphone's device ID to DEVICE_INDEX and run again.")
+        logging.info("Please add your microphone's device ID to STT_DEVICE_INDEX and run again.")
         p.terminate()
         exit(1)
 
     frames = []
     recording = False
-    dynamic_threshold = INITIAL_THRESHOLD
+    dynamic_threshold = STT_INITIAL_THRESHOLD
     noise_buffer = []
     last_audio_time = time.time()
 
     def calculate_noise_level():
         if not noise_buffer:
-            return INITIAL_THRESHOLD
+            return STT_INITIAL_THRESHOLD
         return np.mean(noise_buffer)
 
     async def transcribe_audio(audio_buffer):
@@ -472,9 +514,11 @@ if AI_STT_FEATURE:
             for result in response.results:
                 logging.info("Transcript sent to Gemini API\n"
                              f"{result.alternatives[0].transcript}")
-                response_text = await query_gemini_with_STT('owner', result.alternatives[0].transcript)
+                response_text = await query_gemini_with_STT(OWNER, result.alternatives[0].transcript)
                 logging.info("Response from Gemini API: " + response_text)
                 clean_response = emoji.replace_emoji(response_text, replace='')
+                clean_response = clean_response.replace('"', ' ')
+                clean_response = clean_response.replace('*', ' ')
                 audio_file_buffer = synthesize_speech(clean_response)
                 logging.info("Generated speech audio buffer.")
 
@@ -492,7 +536,7 @@ if AI_STT_FEATURE:
             wf.setsampwidth(p.get_sample_size(FORMAT))
             wf.setframerate(rate)
             wf.writeframes(b''.join(frames))
-        audio_buffer.seek(0)  # Rewind buffer for reading
+        audio_buffer.seek(0)
 
         def run_transcribe():
             asyncio.run(transcribe_audio(audio_buffer))
@@ -506,7 +550,7 @@ if AI_STT_FEATURE:
         audio_level = np.max(np.abs(audio_data))
 
         noise_buffer.append(audio_level)
-        if len(noise_buffer) > NOISE_BUFFER_SIZE:
+        if len(noise_buffer) > STT_NOISE_BUFFER_SIZE:
             noise_buffer.pop(0)
 
         dynamic_threshold = calculate_noise_level() * 1.5
@@ -514,15 +558,16 @@ if AI_STT_FEATURE:
         current_time = time.time()
 
         if audio_level > dynamic_threshold:
-            last_audio_time = current_time
-            if not recording:
-                recording = True
-                logging.debug("Input detected. Recording...")
+            if not is_muted:
+                last_audio_time = current_time
+                if not recording:
+                    recording = True
+                    logging.debug("Input detected. Recording...")
 
         if recording:
             frames.append(in_data)
 
-            if current_time - last_audio_time > SILENCE_DURATION:
+            if current_time - last_audio_time > STT_SILENCE_DURATION:
                 recording = False
                 logging.info("Silence detected. Finished recording.")
                 threading.Thread(target=process_audio, args=(frames, CHANNELS, RATE)).start()
@@ -536,7 +581,7 @@ if AI_STT_FEATURE:
                         rate=RATE,
                         input=True,
                         frames_per_buffer=CHUNK,
-                        input_device_index=DEVICE_INDEX,
+                        input_STT_DEVICE_INDEX=STT_DEVICE_INDEX,
                         stream_callback=callback)
         logging.info("Speech to text API started.")
 
@@ -892,6 +937,8 @@ async def fetch_information(query):
     wikipedia_summary = None
     try:
         for keyword in keywords:
+            if keyword.lower() == BOT_NICKNAME.lower() or keyword.lower() == BOT_TWITCH_NAME.lower():
+                continue
             page = wiki_wiki.page(keyword)
             if page.exists():
                 wikipedia_summary = page.summary[:1000]
@@ -967,6 +1014,8 @@ async def query_gemini_with_memory(user_id, prompt):
             return "Sorry, I'm having trouble with the AI service right now."
 
         logging.info("Full prompt: " + full_prompt)
+
+    full_prompt += "\n\nKeep all forumlated responses under 500 characters."
 
     response = chat_session.send_message(full_prompt)
     generated_text = response.text.strip()
@@ -1200,6 +1249,13 @@ async def TTS_flag(ctx):
     global AI_TTS_FEATURE
     if ctx.author.ud in AUTHORIZED_USERS_LIST:
         AI_TTS_FEATURE = not AI_TTS_FEATURE
+
+
+@ bot.command(name='STT')
+async def STT_flag(ctx):
+    global AI_STT_FEATURE
+    if ctx.author.ud in AUTHORIZED_USERS_LIST:
+        AI_STT_FEATURE = not AI_STT_FEATURE
 
 
 @ bot.command(name='Memory')
