@@ -49,10 +49,13 @@
         <br>- Added all necessary configurables to .env for easy of use. Added a .bat to run the script
         <br><s>Also, redo the instructions. Now that it is fully released, make it simpler for new users to implement.</s>
         <br>Will write a detailed instructional manual</br></li>
-        <li>Possibly improve or replace LLM, may try a custom trained Gemini first.
+        <br>
+        <h4>Feature Ideas></h4>
+        <br><li>Possibly improve or replace LLM, may try a custom trained Gemini first.</li>
         <br>The model functions well, but is very limited on knowledge.</li>
         <li>Can we go 100% open-source?</li>
         <li>Ongoing testing of WikipediaAPI, Emotion Detection, Moods, and AI Memory</li>
+        <li>Android APP for individual use?</li>
     </ul>
     <br>
     <br>
