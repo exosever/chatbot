@@ -37,6 +37,7 @@ if not load_dotenv('chatbot_variables.env'):
                    'according to your needs before running the bot.\n\n'
 
                    '# Logging levels, default is INFO, change to DEBUG if you need additional feedback\n'
+                   'LOGGING = True\n'
                    'LOGGING_LEVEL = INFO\n\n'
 
                    'TWITCH_OAUTH_TOKEN = "13456"\n'
@@ -167,28 +168,30 @@ AI_TTS_FEATURE = os.getenv('AI_TTS_FEATURE', 'false').lower() in ['true', '1', '
 AI_STT_FEATURE = os.getenv('AI_STT_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
 MUTE_KEY = os.getenv('MUTE_KEY')
 LOGGING_LEVEL = os.getenv('LOGGING_LEVEL')
-
+LOGGING = os.getenv('LOGGING', 'false').lower() in ['true', '1', 't', 'y', 'yes']
 
 """
 Logging Configuration
 """
-level_map = {
-    'DEBUG': logging.DEBUG,
-    'INFO': logging.INFO,
-    'WARNING': logging.WARNING,
-    'ERROR': logging.ERROR,
-    'CRITICAL': logging.CRITICAL
-}
-LOGGING_LEVEL = level_map[LOGGING_LEVEL]
-logging.basicConfig(level=LOGGING_LEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
 
-threshold_map = {
-    'LOW': HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-    'MEDIUM': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    'HIGH': HarmBlockThreshold.BLOCK_ONLY_HIGH
-}
+if LOGGING:
+    level_map = {
+        'DEBUG': logging.DEBUG,
+        'INFO': logging.INFO,
+        'WARNING': logging.WARNING,
+        'ERROR': logging.ERROR,
+        'CRITICAL': logging.CRITICAL
+    }
+    LOGGING_LEVEL = level_map[LOGGING_LEVEL]
+    logging.basicConfig(level=LOGGING_LEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
 
-FILTER_THRESHOLD = threshold_map[os.getenv('FILTER_THRESHOLD').upper()]
+    threshold_map = {
+        'LOW': HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+        'MEDIUM': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        'HIGH': HarmBlockThreshold.BLOCK_ONLY_HIGH
+    }
+
+    FILTER_THRESHOLD = threshold_map[os.getenv('FILTER_THRESHOLD').upper()]
 
 if AI_TTS_FEATURE:
     google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -275,6 +278,22 @@ if AI_WIKIPEDIA_FEATURE:
     except Exception as e:
         logging.error("Failed to create wikipedia instance, error:", f"{e}")
 
+
+"""
+Process time function for performance debugging
+"""
+
+
+def time_it(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"{func.__name__} executed in {end_time - start_time:.4f} seconds")
+        return result
+    return wrapper
+
+
 """
 This block handles the Google TTS API
 Initializes model, language, pitch, speed, etc.
@@ -299,6 +318,7 @@ if AI_TTS_FEATURE:
 
     logging.info("Google TTS API initialized successfully.")
 
+    @time_it
     def synthesize_speech(text, pitch=TTS_PITCH, speaking_rate=TTS_SPEAKING_RATE):
         input_text = texttospeech.SynthesisInput(text=text)
 
@@ -322,6 +342,7 @@ if AI_TTS_FEATURE:
 
         return audio_buffer
 
+    @time_it
     async def handle_tts_request(text):
         audio_buffer = synthesize_speech(text)
         tts_queue.append(audio_buffer)
@@ -329,6 +350,7 @@ if AI_TTS_FEATURE:
         if not is_playing:
             await play_next_in_queue()
 
+    @time_it
     async def play_next_in_queue():
         global is_playing
         while tts_queue:
@@ -339,6 +361,7 @@ if AI_TTS_FEATURE:
 
         is_playing = False
 
+    @time_it
     def play_audio_from_buffer(audio_buffer):
         audio_buffer.seek(0)
 
@@ -371,6 +394,7 @@ These are the experimental STT Gemini query functions
 """
 
 
+@time_it
 async def query_gemini_with_STT(user_id, prompt):
     global message_count
     chat_session = model.start_chat(history=[])
@@ -476,11 +500,13 @@ if AI_STT_FEATURE:
     noise_buffer = []
     last_audio_time = time.time()
 
+    @time_it
     def calculate_noise_level():
         if not noise_buffer:
             return STT_INITIAL_THRESHOLD
         return np.mean(noise_buffer)
 
+    @time_it
     async def transcribe_audio(audio_buffer):
         try:
             client = speech.SpeechClient()
@@ -513,6 +539,7 @@ if AI_STT_FEATURE:
         except Exception as e:
             logging.error(f"Error processing audio: {e}")
 
+    @time_it
     def process_audio(frames, channels, rate):
         audio_buffer = io.BytesIO()
         with wave.open(audio_buffer, 'wb') as wf:
@@ -527,6 +554,7 @@ if AI_STT_FEATURE:
 
         threading.Thread(target=run_transcribe).start()
 
+    @time_it
     def callback(in_data, frame_count, time_info, status):
         global recording, frames, last_audio_time
 
@@ -1277,7 +1305,6 @@ except AttributeError:
                   )
 input("Press ENTER to exit")
 
-# Add performance timers to DEBUG mode so I can trace how long the bot takes per function?
 # Slow response
 # Sometimes cutting the spoken prompt in half, and responding to each one independantly
 # Not catching most of the spoken prompts
