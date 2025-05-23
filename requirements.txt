@@ -98,3 +98,4 @@ wheel==0.44.0
 Wikipedia-API==0.6.0
 wrapt==1.16.0
 yarl==1.9.4
+openai>=1.0.0
