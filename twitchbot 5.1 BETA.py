@@ -5,10 +5,10 @@ import json
 import os
 import time
 import gc
+import openai # Added for OpenAI integration
 
-import google.generativeai as genai
 from twitchio.ext import commands
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
+# Removed google.generativeai and HarmCategory/HarmBlockThreshold imports
 from dotenv import load_dotenv
 
 """
@@ -40,20 +40,17 @@ if not load_dotenv('chatbot_variables.env'):
                    'LOGGING = True\n'
                    'LOGGING_LEVEL = INFO\n\n'
 
-                   'TWITCH_OAUTH_TOKEN = "13456"\n'
-                   'TWITCH_CLIENT_ID = "123465"\n'
-                   'TWITCH_CHANNEL_NAME = "123456"\n'
-                   'GENAI_API_KEY = "13456"\n'
-                   'GOOGLE_APPLICATION_CREDENTIALS = "123456"\n\n'
+                   'TWITCH_OAUTH_TOKEN = "13456"\n' # Placeholder
+                   'TWITCH_CLIENT_ID = "123465"\n' # Placeholder
+                   'TWITCH_CHANNEL_NAME = "123456"\n' # Placeholder
+                   # Removed GENAI_API_KEY = "13456"
+                   'GOOGLE_APPLICATION_CREDENTIALS = "123456"\n\n' # For Google TTS
 
                    '# AUTHORIZED_USERS_LIST is a list of USER NAMES\n'
                    '# to run admin commands from within twitch chat\n'
                    'AUTHORIZED_USERS_LIST=["TheJoshinatah", "DirtyDan"]\n\n'
 
-                   '# Filter Threshold for the LLM\n'
-                   '# Set to HIGH, MEDIUM, or LOW.\n'
-                   '# This works by blocking ONLY what you set it to, so HIGH only blocks HIGH risk!\n'
-                   'FILTER_THRESHOLD = HIGH\n\n'
+                   # Removed FILTER_THRESHOLD = HIGH (OpenAI handles moderation)
 
                    '# BOT_TWITCH_NAME is the name of the "BOT" twitch account.\n'
                    '# BOT_NICKNAME is the name the bot will respond to.\n'
@@ -120,13 +117,19 @@ if not load_dotenv('chatbot_variables.env'):
                    '# or to minimize network usage.\n'
                    '# These flags can also assist with DEBUGGING problems, along with\n'
                    '# setting the LOGGING level to DEBUG.\n'
-                   "AI_WIKIPEDIA_FEATURE=True\n"
-                   "AI_EMOTION_DETECTION_FEATURE=True\n"
-                   "AI_MOODS_FEATURE=True\n"
-                   "AI_MEMORY_FEATURE=True\n"
-                   "AI_LEARNING_FEATURE=True\n"
-                   "AI_TTS_FEATURE=True\n"
-                   "AI_STT_FEATURE=True\n"
+                   # "AI_WIKIPEDIA_FEATURE=True\n" # Removed
+                   # "AI_EMOTION_DETECTION_FEATURE=True\n" # Removed
+                   # "AI_MOODS_FEATURE=True\n" # Removed
+                   # "AI_MEMORY_FEATURE=True\n" # Already Removed
+                   "AI_LEARNING_FEATURE=True\n" # Retained
+                   "AI_TTS_FEATURE=True\n" # Retained
+                   "AI_STT_FEATURE=True\n\n" # Retained
+
+                   '# OpenAI Configuration - Add these to your actual chatbot_variables.env file\n'
+                   'OPENAI_API_KEY="YOUR_OPENAI_API_KEY_HERE"\n'
+                   'OPENAI_ASSISTANT_ID="YOUR_OPENAI_ASSISTANT_ID_HERE"\n'
+                   'OPENAI_VECTOR_STORE_ID="YOUR_OPENAI_VECTOR_STORE_ID_HERE"\n'
+                   'LONG_TERM_MEMORY_UPLOAD_INTERVAL_SECONDS=3600\n'
                    )
 
     print("No .env detected or file is empty. "
@@ -139,7 +142,7 @@ if not load_dotenv('chatbot_variables.env'):
 TWITCH_OAUTH_TOKEN = os.getenv('TWITCH_OAUTH_TOKEN')
 TWITCH_CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 TWITCH_CHANNEL_NAME = os.getenv('TWITCH_CHANNEL_NAME')
-GENAI_API_KEY = os.getenv('GENAI_API_KEY')
+# Removed GENAI_API_KEY = os.getenv('GENAI_API_KEY')
 AUTHORIZED_USERS_LIST = json.loads(os.getenv('AUTHORIZED_USERS_LIST', '[]'))
 BOT_TWITCH_NAME = os.getenv('BOT_TWITCH_NAME')
 BOT_NICKNAME = os.getenv('BOT_NICKNAME')
@@ -158,17 +161,23 @@ STT_SILENCE_DURATION = float(os.getenv('STT_SILENCE_DURATION'))
 INPUT_STT_DEVICE_INDEX = int(os.getenv('INPUT_STT_DEVICE_INDEX'))
 OUTPUT_TTS_DEVICE_INDEX = int(os.getenv('OUTPUT_TTS_DEVICE_INDEX'))
 STT_NOISE_BUFFER_SIZE = int(os.getenv('STT_NOISE_BUFFER_SIZE'))
-AI_WIKIPEDIA_FEATURE = os.getenv('AI_WIKIPEDIA_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
-AI_EMOTION_DETECTION_FEATURE = os.getenv('AI_EMOTION_DETECTION_FEATURE', 'false').lower() in [
-    'true', '1', 't', 'y', 'yes']
-AI_MOODS_FEATURE = os.getenv('AI_MOODS_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
-AI_MEMORY_FEATURE = os.getenv('AI_MEMORY_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
-AI_LEARNING_FEATURE = os.getenv('AI_LEARNING_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
-AI_TTS_FEATURE = os.getenv('AI_TTS_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+# AI_WIKIPEDIA_FEATURE = os.getenv('AI_WIKIPEDIA_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes'] # Removed
+# AI_EMOTION_DETECTION_FEATURE = os.getenv('AI_EMOTION_DETECTION_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes'] # Removed
+# AI_MOODS_FEATURE = os.getenv('AI_MOODS_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes'] # Removed
+# AI_MEMORY_FEATURE = os.getenv('AI_MEMORY_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes'] # Already Removed
+AI_LEARNING_FEATURE = os.getenv('AI_LEARNING_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes'] # Retained
+AI_TTS_FEATURE = os.getenv('AI_TTS_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes'] # Retained
 AI_STT_FEATURE = os.getenv('AI_STT_FEATURE', 'false').lower() in ['true', '1', 't', 'y', 'yes']
 MUTE_KEY = os.getenv('MUTE_KEY')
 LOGGING_LEVEL = os.getenv('LOGGING_LEVEL')
 LOGGING = os.getenv('LOGGING', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+
+# OpenAI Configuration
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_ASSISTANT_ID = os.getenv('OPENAI_ASSISTANT_ID')
+OPENAI_VECTOR_STORE_ID = os.getenv('OPENAI_VECTOR_STORE_ID') # Added
+LONG_TERM_MEMORY_UPLOAD_INTERVAL_SECONDS = int(os.getenv('LONG_TERM_MEMORY_UPLOAD_INTERVAL_SECONDS', 3600))
+
 
 """
 Logging Configuration
@@ -185,13 +194,7 @@ if LOGGING:
     LOGGING_LEVEL = level_map[LOGGING_LEVEL]
     logging.basicConfig(level=LOGGING_LEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    threshold_map = {
-        'LOW': HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-        'MEDIUM': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        'HIGH': HarmBlockThreshold.BLOCK_ONLY_HIGH
-    }
-
-    FILTER_THRESHOLD = threshold_map[os.getenv('FILTER_THRESHOLD').upper()]
+    # Removed threshold_map and FILTER_THRESHOLD assignment
 
 if AI_TTS_FEATURE:
     google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -205,12 +208,22 @@ if AI_TTS_FEATURE:
         input("Press ENTER to exit")
         exit()
 
-if not all([TWITCH_OAUTH_TOKEN, TWITCH_CLIENT_ID, TWITCH_CHANNEL_NAME, GENAI_API_KEY]):
-    print("Please verify all API keys are present in chatbot_variables.env and run again.")
+# Updated to remove GENAI_API_KEY from the check
+if not all([TWITCH_OAUTH_TOKEN, TWITCH_CLIENT_ID, TWITCH_CHANNEL_NAME, OPENAI_API_KEY, OPENAI_ASSISTANT_ID]):
+    print("Please verify all API keys (Twitch, OpenAI) are present in chatbot_variables.env and run again.")
     input("Press ENTER to exit")
     exit()
 
-genai.configure(api_key=GENAI_API_KEY)
+# Initialize OpenAI Client
+if OPENAI_API_KEY:
+    openaiclient = openai.OpenAI(api_key=OPENAI_API_KEY) # Renamed to openaiclient to avoid conflict
+    logging.info("OpenAI client initialized successfully.")
+else:
+    logging.error("OPENAI_API_KEY not found. OpenAI features will be disabled.")
+    # Decide if to exit or disable features - for now, just log an error
+
+
+# Removed genai.configure(api_key=GENAI_API_KEY)
 
 if AI_STT_FEATURE and not AI_TTS_FEATURE:
     AI_TTS_FEATURE = True
@@ -220,23 +233,7 @@ load the generation config from a JSON file
 If a config is not present, a default one will be created
 """
 
-
-try:
-    with open("generation_config.json", "r") as config_file:
-        generation_config = json.load(config_file)
-        logging.info("generation_config.json loaded successfully.")
-except FileNotFoundError:
-    generation_config = {
-        "temperature": 0.9,
-        "top_p": 0.95,
-        "top_k": 64,
-        "max_output_tokens": 8192,
-        "response_mime_type": "text/plain",
-    }
-    print("No generation_config.json detected. Using default values.")
-    with open("generation_config.json", "w") as config_file:
-        json.dump(generation_config, config_file, indent=4)
-
+# Removed generation_config.json loading section
 
 """
 Initialize the bot, emotion detection, and wikipedia API
@@ -254,30 +251,8 @@ except Exception as e:
     logging.error("Failed to create bot instance, error:", f"{e}")
     print("An error occurred while creating the bot instance. Check the log for details.")
 
-if AI_EMOTION_DETECTION_FEATURE:
-    from transformers import pipeline
-    try:
-        emotion_classifier = pipeline(
-            'sentiment-analysis', model='j-hartmann/emotion-english-distilroberta-base')
-        logging.info("Emotion classifier created successfully.")
-    except Exception as e:
-        logging.error("Failed to create emotion classifier, error:", f"{e}")
-
-if AI_WIKIPEDIA_FEATURE:
-    import nltk
-    import wikipediaapi
-    from nltk.corpus import stopwords
-    from nltk.tokenize import word_tokenize
-
-    try:
-        wiki_wiki = wikipediaapi.Wikipedia(
-            language='en',
-            user_agent=f'{BOT_TWITCH_NAME} ; Python/3.x'
-        )
-        logging.info("Wikipedia instance created successfully.")
-    except Exception as e:
-        logging.error("Failed to create wikipedia instance, error:", f"{e}")
-
+# Removed AI_EMOTION_DETECTION_FEATURE block including transformers import and emotion_classifier
+# Removed AI_WIKIPEDIA_FEATURE block including nltk and wikipediaapi imports and wiki_wiki instance
 
 """
 Process time function for performance debugging
@@ -308,15 +283,21 @@ if AI_TTS_FEATURE:
     import emoji
     from collections import deque
     from google.cloud import texttospeech
-    from pydub import AudioSegment
+    from pydub import AudioSegment # Uncommented: Required for play_audio_from_buffer
     import io
 
     tts_queue = deque()
     is_playing = False
 
-    client = texttospeech.TextToSpeechClient()
+    # Note: The variable 'client' was previously used for Google TTS.
+    # If Google TTS is still active, this variable name might need to be managed
+    # to avoid conflict with the OpenAI client, which I named 'openaiclient'.
+    # For now, assuming Google TTS client init is still valid.
+    google_tts_client = texttospeech.TextToSpeechClient() # Corrected: Initialize only once
 
     logging.info("Google TTS API initialized successfully.")
+
+    # OpenAI Client initialization is handled earlier in the script.
 
     @time_it
     def synthesize_speech(text, pitch=TTS_PITCH, speaking_rate=TTS_SPEAKING_RATE):
@@ -333,7 +314,7 @@ if AI_TTS_FEATURE:
             speaking_rate=speaking_rate,
         )
 
-        response = client.synthesize_speech(
+        response = google_tts_client.synthesize_speech( # Corrected: Use renamed google_tts_client
             input=input_text, voice=voice, audio_config=audio_config
         )
 
@@ -393,79 +374,157 @@ if AI_TTS_FEATURE:
 These are the experimental STT Gemini query functions
 """
 
+# Global dictionary to store user_id to thread_id mapping
+user_threads = {}
 
-@time_it
-async def query_gemini_with_STT(user_id, prompt):
-    global message_count
-    chat_session = model.start_chat(history=[])
+async def append_to_long_term_memory(user_id: str, prompt: str, response: str):
+    """Appends a user interaction to the long-term memory file in JSONL format."""
+    log_entry = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "user_id": user_id,
+        "prompt": prompt,
+        "response": response
+    }
+    try:
+        # Define the file writing operation as a synchronous function
+        def _write_sync():
+            # Ensure the directory exists (optional, if file is in root)
+            # os.makedirs(os.path.dirname("long_term_memory.txt"), exist_ok=True)
+            with open("long_term_memory.txt", "a", encoding="utf-8") as f:
+                f.write(json.dumps(log_entry) + "\n")
+        
+        # Run the synchronous file writing operation in a separate thread
+        await asyncio.to_thread(_write_sync)
+        logging.info("Successfully appended interaction for user %s to long_term_memory.txt", user_id) # Changed to INFO
+    except Exception as e:
+        logging.error("Error appending to long_term_memory.txt for user %s: %s", user_id, e)
 
-    if prompt == '' or prompt is None or prompt == ' ':
-        logging.info("Prompt is empty, skipping STT query")
-        pass
-    else:
-        full_prompt = (
-            "This is the user's current prompt:\n"
-            f"{prompt}\n\n"
+async def query_openai_assistant(user_id: str, prompt: str) -> str:
+    global user_threads
+    assistant_id = OPENAI_ASSISTANT_ID # Loaded from environment variables
+
+    if not openaiclient:
+        logging.error("OpenAI client not initialized. Cannot query assistant for user_id: %s", user_id)
+        return "Sorry, I'm having trouble connecting to the AI service."
+
+    try:
+        # Check if user_id has an existing thread
+        thread_id = user_threads.get(user_id)
+        if not thread_id:
+            logging.info("No existing thread found for user_id: %s. Creating new thread.", user_id)
+            thread = await asyncio.to_thread(openaiclient.beta.threads.create)
+            user_threads[user_id] = thread.id
+            thread_id = thread.id
+            logging.info("New thread created with ID: %s for user_id: %s", thread_id, user_id)
+        else:
+            logging.info("Using existing thread ID: %s for user_id: %s", thread_id, user_id)
+
+        # Add message to thread
+        logging.info("Adding message to thread %s for user_id %s. Prompt: '%s'", thread_id, user_id, prompt)
+        await asyncio.to_thread(
+            openaiclient.beta.threads.messages.create,
+            thread_id=thread_id,
+            role="user",
+            content=prompt
         )
-        if AI_MEMORY_FEATURE:
 
-            user_memory = await load_cached_memory(user_id)
-            previous_data = "\n".join(
-                ['User prompt: ' + interaction['prompt']
-                 + " Generated Response:" + interaction['response']
-                    for interaction in user_memory])
-            full_prompt += ("Here is some previous data from the user to keep in mind:\n"
-                            f"{previous_data}\n\n")
+        # Create a run
+        logging.info("Creating run for thread_id: %s with assistant_id: %s", thread_id, assistant_id)
+        run = await asyncio.to_thread(
+            openaiclient.beta.threads.runs.create,
+            thread_id=thread_id,
+            assistant_id=assistant_id
+        )
+        logging.info("Run created with ID: %s for thread_id: %s", run.id, thread_id)
 
-        if AI_EMOTION_DETECTION_FEATURE:
-            emotion_analysis = emotion_classifier(prompt)
-            detected_emotion = emotion_analysis[0]['label']
-            emotion_confidence = emotion_analysis[0]['score']
-            logging.debug(f"Detected emotion: {detected_emotion}, confidence: {emotion_confidence}")
-            full_prompt += (f"Here is the current emotional state of the bot: \n{
-                            mood_instructions}\n\n")
+        # Poll for response
+        logging.info("Polling for run completion, run_id: %s, thread_id: %s", run.id, thread_id)
+        start_time = time.time()
+        timeout_seconds = 60 # Set a timeout for the run completion
 
-        if AI_MOODS_FEATURE:
-            if AI_EMOTION_DETECTION_FEATURE:
-                adjust_emotional_state_analysis(detected_emotion)
-            print(emotional_states[current_emotion_index])
-            print(mood_instructions)
-            full_prompt += ("The user seems to be feeling "
-                            f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
-                            "Please respond in a way that reflects this mood.\n\n")
+        while True:
+            if time.time() - start_time > timeout_seconds:
+                logging.error("Run %s timed out after %d seconds for thread_id: %s.", run.id, timeout_seconds, thread_id)
+                # Optionally, remove thread_id if run timed out
+                # if user_id in user_threads: del user_threads[user_id]
+                return "Sorry, the AI operation timed out. Please try again."
 
-        if AI_WIKIPEDIA_FEATURE:
-            try:
-                if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
-                    prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
-                elif prompt.lower().startswith(BOT_NICKNAME.lower()):
-                    prompt = prompt[len(BOT_NICKNAME):].strip()
+            run_status = await asyncio.to_thread(
+                openaiclient.beta.threads.runs.retrieve,
+                thread_id=thread_id,
+                run_id=run.id
+            )
+            logging.debug("Run %s status: %s for thread_id: %s", run.id, run_status.status, thread_id)
 
-                wiki_summary = await fetch_information(prompt)
-
-                if wiki_summary:
-                    full_prompt += (
-                        "Additionally, here is some related factual "
-                        "information from Wikipedia to consider in your response:\n"
-                        f"{wiki_summary}\n\n"
+            if run_status.status == 'completed':
+                logging.info("Run %s completed for thread_id: %s", run.id, thread_id)
+                break
+            elif run_status.status in ['queued', 'in_progress']:
+                await asyncio.sleep(1)  # Wait for 1 second before polling again
+            elif run_status.status in ['failed', 'cancelled', 'expired']:
+                logging.error("Run %s %s. Error: %s for thread_id: %s", run.id, run_status.status, run_status.last_error, thread_id)
+                # Optionally, remove thread_id if run failed permanently
+                # if user_id in user_threads: del user_threads[user_id]
+                return f"Sorry, the AI operation {run_status.status}. Please try again."
+            elif run_status.status == 'requires_action':
+                logging.warning("Run %s requires action. This is not handled in this version for thread_id: %s.", run.id, thread_id)
+                # This part would require handling function calls from the assistant if any are defined.
+                # For now, we will attempt to submit empty tool outputs to see if it resolves.
+                if run_status.required_action and run_status.required_action.type == "submit_tool_outputs":
+                    logging.info("Run %s requires tool outputs. Submitting empty outputs for thread_id: %s.", run.id, thread_id)
+                    await asyncio.to_thread(
+                        openaiclient.beta.threads.runs.submit_tool_outputs,
+                        thread_id=thread_id,
+                        run_id=run.id,
+                        tool_outputs=[] # Submit empty tool outputs
                     )
+                else:
+                    return "Sorry, the AI requires an action I can't perform yet."
+            else:
+                logging.error("Unknown run status for run %s: %s for thread_id: %s", run.id, run_status.status, thread_id)
+                return "Sorry, an unexpected error occurred with the AI."
 
-            except Exception as e:
-                logging.error(f"Error in query processing: {e}")
-                return "Sorry, I'm having trouble with the AI service right now."
+        # Retrieve messages
+        logging.info("Retrieving messages for thread_id: %s", thread_id)
+        messages = await asyncio.to_thread(
+            openaiclient.beta.threads.messages.list,
+            thread_id=thread_id
+        )
 
-            logging.info("Full prompt: " + full_prompt)
+        # Find the assistant's response
+        assistant_response = "Sorry, I couldn't get a response from the assistant."
+        # Messages are returned in descending order (newest first)
+        for msg in messages.data:
+            if msg.run_id == run.id and msg.role == "assistant":
+                if msg.content and len(msg.content) > 0:
+                    content_item = msg.content[0]
+                    if hasattr(content_item, 'text') and hasattr(content_item.text, 'value'):
+                        assistant_response = content_item.text.value
+                        # Log a snippet of the response if it's too long
+                        response_snippet = (assistant_response[:75] + '...') if len(assistant_response) > 75 else assistant_response
+                        logging.info("Assistant response found in thread %s for run %s: '%s'", thread_id, run.id, response_snippet)
+                        break 
+        
+        if AI_LEARNING_FEATURE: # Retain existing feedback mechanism
+             add_feedback_user_id(user_id)
+        
+        # Call to append to new long-term memory
+        await append_to_long_term_memory(user_id, prompt, assistant_response)
 
-        full_prompt += "\n\nKeep all formulated responses under 500 characters."
+        return assistant_response
 
-        response = chat_session.send_message(full_prompt)
-        generated_text = response.text.strip()
+    except openai.APIError as e:
+        logging.error(f"OpenAI API Error for user {user_id}, prompt '{prompt}': {e}")
+        return f"Sorry, there was an API error: {e}"
+    except Exception as e:
+        logging.error(f"Unexpected error in query_openai_assistant for user {user_id}, prompt '{prompt}': {e}")
+        # It's good practice to log the traceback for unexpected errors
+        # import traceback
+        # logging.error(traceback.format_exc())
+        return "Sorry, an unexpected error occurred while talking to the AI."
 
-        if AI_MEMORY_FEATURE:
-            user_memory.append({'prompt': prompt, 'response': generated_text})
-            await save_cached_memory(user_id, user_memory)
 
-        return generated_text
+# Removed query_gemini_with_STT function
 
 
 """
@@ -522,10 +581,10 @@ if AI_STT_FEATURE:
             response = client.recognize(config=config, audio=audio)
 
             for result in response.results:
-                logging.info("Transcript sent to Gemini API\n"
+                logging.info("Transcript sent to OpenAI Assistant API\n" # MODIFIED
                              f"{result.alternatives[0].transcript}")
-                response_text = await query_gemini_with_STT(OWNER, result.alternatives[0].transcript)
-                logging.info("Response from Gemini API: " + response_text)
+                response_text = await query_openai_assistant(OWNER, result.alternatives[0].transcript) # MODIFIED
+                logging.info("Response from OpenAI Assistant API: " + response_text) # MODIFIED
                 clean_response = emoji.replace_emoji(response_text, replace='')
                 clean_response = clean_response.replace('"', ' ')
                 clean_response = clean_response.replace('*', ' ')
@@ -619,107 +678,10 @@ These values can be adjusted by a slider,
 by a random number, or chosen specifically
 """
 
-if AI_MOODS_FEATURE:
-    emotional_states = [
-        "Angry",       # 0
-        "Sad",        # 1
-        "Nervous",    # 2
-        "Confused",   # 3
-        "Calm",        # 4
-        "Happy",       # 5
-        "Motivated",  # 6
-        "Excited",     # 7
-        "Curious",     # 8
-        "Bored",       # 9
-
-    ]
-
-    try:
-        with open("emotional_states.txt", "r") as file:
-            emotional_state_descriptions = json.load(file)
-        logging.info("Loaded Emotional States instructions")
-    except FileNotFoundError:
-        default_states = {
-            "Happy": "The bot is cheerful and friendly, using positive and uplifting language.",
-            "Sad": "The bot is empathetic and soothing, using comforting and gentle language.",
-            "Angry": "The bot is assertive and forceful, using strong and direct language.",
-            "Excited": "The bot is enthusiastic and energetic, using lively and engaging language.",
-            "Confused": "The bot is uncertain and questioning, using exploratory and clarifying language.",
-            "Bored": "The bot is indifferent and minimal, using straightforward and brief language.",
-            "Curious": "The bot is inquisitive and interested, using probing and detailed language.",
-            "Calm": "The bot is relaxed and composed, using calm and steady language.",
-            "Nervous": "The bot is anxious and hesitant, using cautious and tentative language.",
-            "Motivated": "The bot is encouraging and inspiring, using motivational and supportive language."
-        }
-
-        with open('emotional_states.txt', 'w') as file:
-            json.dump(default_states, file, indent=4)
-
-        print("No emotional_states.txt detected. A default one was created for you. "
-              "You can customize your bot's moods by editing this file.")
-
-        with open('emotional_states.txt', 'r') as file:
-            emotional_state_descriptions = json.load(file)
-        logging.info("Loaded Emotional States instructions")
-
-    current_emotion_index = 5
-
-
-def get_emotional_state(index):
-
-    state = emotional_states[index]
-    logging.info("Current emotional state: " + str(emotional_state_descriptions[state]))
-    return emotional_state_descriptions[state]
-
-
-"""
-This code block handles the user interaction portion
-Ranging from 0 to 7 (Angry to Excited)
-"""
-if AI_MOODS_FEATURE:
-    MIN_EMOTIONAL_INDEX = 0
-    MAX_EMOTIONAL_INDEX = 7
-
-    mood_instructions = (
-        f"{get_emotional_state(current_emotion_index)}. "
-        "The bot's responses should reflect this mood. "
-        "Please respond accordingly."
-    )
-
-    adjustment_counter = 0
-
-
-def adjust_emotional_state(current_index, change):
-    global adjustment_counter
-    adjustment_counter += change
-    if adjustment_counter >= ADJUSTMENT_WEIGHT or adjustment_counter <= -(ADJUSTMENT_WEIGHT):
-        if current_index > MAX_EMOTIONAL_INDEX:
-            new_index = 4
-            adjustment_counter = 0
-        else:
-            new_index = max(MIN_EMOTIONAL_INDEX, min(
-                MAX_EMOTIONAL_INDEX, current_index + change))
-            adjustment_counter = 0
-            logging.info("new emotional index: " + str(new_index))
-            logging.info("new emotional state: " + str(get_emotional_state(new_index)))
-        return new_index
-    else:
-        return current_index
-
-
-def adjust_emotional_state_analysis(detected_emotion):
-    global current_emotion_index
-
-    if detected_emotion in ['anger', 'sadness', 'fear', 'disgust']:
-        current_emotion_index = adjust_emotional_state(
-            current_emotion_index, -1)
-    elif detected_emotion in ['joy', 'surprise']:
-        current_emotion_index = adjust_emotional_state(
-            current_emotion_index, 1)
-    elif detected_emotion in ['neutral']:
-        current_emotion_index = adjust_emotional_state(
-            current_emotion_index, 0)
-
+# Removed AI_MOODS_FEATURE block, including:
+# emotional_states list, emotional_states.txt loading, current_emotion_index,
+# get_emotional_state function, mood_instructions, adjustment_counter,
+# adjust_emotional_state function, and adjust_emotional_state_analysis function.
 
 """
 This block handles the reinforcement learning
@@ -731,49 +693,15 @@ feedback_memory = []
 
 
 def update_parameters_based_on_feedback():
-    global generation_config, current_emotion_index, feedback_memory
+    global feedback_memory
 
-    for feedback in feedback_memory:
-        if 'positive' in feedback:
-            generation_config['temperature'] += 0.1
-            if AI_MOODS_FEATURE:
-                current_emotion_index = adjust_emotional_state(
-                    current_emotion_index, 1)
-        else:
-            generation_config['temperature'] -= 0.1
-            if AI_MOODS_FEATURE:
-                current_emotion_index = adjust_emotional_state(
-                    current_emotion_index, -1)
+    # This function previously handled GenAI-specific parameter tuning
+    # (temperature, top_k, top_p) and mood adjustments.
+    # Since GenAI components and related features (moods) have been removed,
+    # this function now only serves to clear the feedback_memory.
+    # If OpenAI requires similar feedback-based tuning, it would need a new implementation.
 
-        generation_config['temperature'] = max(
-            0.1, min(1.5, generation_config['temperature']))
-
-        if 'positive' in feedback:
-            generation_config['top_k'] = min(
-                100, generation_config.get('top_k', 50) + 1)
-        else:
-            generation_config['top_k'] = max(
-                1, generation_config.get('top_k', 50) - 1)
-
-        generation_config['top_k'] = max(
-            1, min(100, generation_config['top_k']))
-
-        if 'positive' in feedback:
-            generation_config['top_p'] = min(
-                1.0, generation_config.get('top_p', 0.9) + 0.01)
-        else:
-            generation_config['top_p'] = max(
-                0.0, generation_config.get('top_p', 0.9) - 0.01)
-
-        generation_config['top_p'] = max(
-            0.0, min(1.0, generation_config['top_p']))
-
-    if AI_MEMORY_FEATURE:
-        with open("generation_config.json", "w") as config_file:
-            json.dump(generation_config, config_file)
-
-    logging.info("Processed feedback")
-
+    logging.info("Processed feedback and cleared feedback_memory.")
     feedback_memory = []
 
 
@@ -805,161 +733,48 @@ def can_give_feedback(user_id):
 Load the instructions for the bot personality if they exist
 """
 
-try:
-    with open("chatbot_instructions.txt", "r") as instructions:
-        chatbot_instructions = instructions.read().strip()
-    logging.info("Loaded LLM instructions")
-except FileNotFoundError:
-    with open('chatbot_instruction.txt', 'w') as file:
-        file.write('default instructions')
-    print("No chatbot_instructions.txt detected. "
-          "A default set was created for you. "
-          "If you wish to customize your bots personality "
-          "and instructions, edit this file.\n"
-          "A prompt of 100-300 words is recommended if you want an AI with an in-depth pesonality.")
-    with open('chatbot_instruction.txt', 'r') as file:
-        chatbot_instructions = file.read().strip()
-        logging.info("Loaded LLM instructions")
+# Removed chatbot_instructions.txt loading, as OpenAI Assistant instructions are set in its configuration.
 
 
 """
 Model settings and paramters
 """
-try:
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        generation_config=generation_config,
-        system_instruction=str(chatbot_instructions),
-        safety_settings={
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH:
-            FILTER_THRESHOLD,
-            HarmCategory.HARM_CATEGORY_HARASSMENT:
-            FILTER_THRESHOLD,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
-            FILTER_THRESHOLD,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
-            FILTER_THRESHOLD,
-        }
-    )
-    logging.info("Loaded LLM model")
-
-except Exception as e:
-    logging.error(f"Error loading model: {e}")
-    print("Error loading model, please check logs for details.")
-
+# Removed Gemini model initialization (genai.GenerativeModel)
 
 """
 Load and save the persistent memory
 Additionally, cache the memory for faster loading
 """
 
-if AI_MEMORY_FEATURE:
-    import sqlite3
-    conn = sqlite3.connect('chatbot_memory.db', check_same_thread=False)
-    cursor = conn.cursor()
-    logging.info("Loaded persistent memory")
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS user_memory (
-        user_id TEXT PRIMARY KEY,
-        interactions TEXT
-    )''')
-
-    def save_memory(user_id, interactions):
-        cursor.execute('''INSERT OR REPLACE INTO user_memory
-                        (user_id, interactions)
-                        VALUES (?, ?)''', (user_id, json.dumps(interactions)))
-        conn.commit()
-        logging.info("Saved to persistent memory")
-
-    def load_memory(user_id):
-        cursor.execute(
-            'SELECT interactions FROM user_memory WHERE user_id = ?', (user_id,))
-        row = cursor.fetchone()
-        logging.info("Loaded from persistent memory")
-        return json.loads(row[0]) if row else []
-
-    user_memory_cache = {}
-
-    async def load_cached_memory(user_id):
-        if user_id in user_memory_cache:
-            return user_memory_cache[user_id]
-
-        user_memory = load_memory(user_id)
-        user_memory_cache[user_id] = user_memory
-        return user_memory
-
-    async def save_cached_memory(user_id, memory_data):
-
-        save_memory(user_id, memory_data)
-        user_memory_cache[user_id] = memory_data
-
+# Removed the entire AI_MEMORY_FEATURE block, including:
+# - import sqlite3
+# - conn, cursor initialization
+# - user_memory table creation
+# - save_memory function
+# - load_memory function
+# - user_memory_cache dictionary
+# - load_cached_memory function
+# - save_cached_memory function
 
 """
 Download keyword files if necessary
 """
 
-
-def download_nltk_data(resource_name, resource_url):
-    try:
-        nltk.data.find(resource_name)
-        print(f"{resource_name} is already downloaded.")
-    except LookupError:
-        print(f"{resource_name} not found. Downloading...")
-        nltk.download(resource_url)
-
-
-if AI_WIKIPEDIA_FEATURE:
-    download_nltk_data('corpora/stopwords.zip', 'stopwords')
-    download_nltk_data('tokenizers/punkt.zip', 'punkt')
-
+# Removed download_nltk_data function
+# Removed AI_WIKIPEDIA_FEATURE block that called download_nltk_data
 
 """
 This function extracts keywords for the wikipedia and duckduckgo APIs
 """
 
-
-def extract_keywords(query):
-    stop_words = set(stopwords.words('english'))
-    word_tokens = word_tokenize(query)
-    keywords = [word for word in word_tokens if word.isalnum()
-                and word.lower() not in stop_words]
-
-    if BOT_NICKNAME or BOT_TWITCH_NAME in keywords:
-        try:
-            keywords.remove(BOT_TWITCH_NAME)
-        except ValueError:
-            pass
-        try:
-            keywords.remove(BOT_NICKNAME)
-        except ValueError:
-            pass
-
-    logging.info(("Extracted keywords" + str(keywords)))
-    return keywords
-
+# Removed extract_keywords function
 
 """
 This code block searches wikipedia and duckduckgo APIs for relevant information
 Based on keywords extracted from prompt
 """
 
-
-async def fetch_information(query):
-    keywords = extract_keywords(query)
-    wikipedia_summary = None
-    try:
-        for keyword in keywords:
-            if keyword.lower() == BOT_NICKNAME.lower() or keyword.lower() == BOT_TWITCH_NAME.lower():
-                continue
-            page = wiki_wiki.page(keyword)
-            if page.exists():
-                wikipedia_summary = page.summary[:1000]
-                break
-    except Exception as e:
-        logging.error(f"Error during Wikipedia search: {e}")
-    logging.info("Wikipedia summary: " + str(wikipedia_summary))
-    return wikipedia_summary
-
+# Removed fetch_information function
 
 """
 This function formats the prompt to be sent to the API
@@ -970,79 +785,7 @@ And saves the user prompt and response to the memory
 message_count = 0
 
 
-async def query_gemini_with_memory(user_id, prompt):
-    global message_count
-
-    chat_session = model.start_chat(history=[])
-
-    full_prompt = (
-        "This is the user's current prompt:\n"
-        f"{prompt}\n\n"
-    )
-
-    if AI_MEMORY_FEATURE:
-        user_memory = await load_cached_memory(user_id)
-        previous_data = "\n".join(
-            ['User prompt: ' + interaction['prompt']
-             + " Generated Response:" + interaction['response']
-                for interaction in user_memory])
-        full_prompt += ("Here is some previous data from the user to keep in mind:\n"
-                        f"{previous_data}\n\n")
-
-    if AI_EMOTION_DETECTION_FEATURE:
-        emotion_analysis = emotion_classifier(prompt)
-        detected_emotion = emotion_analysis[0]['label']
-        emotion_confidence = emotion_analysis[0]['score']
-        full_prompt += (f"Here is the current emotional state of the bot: \n{
-                        mood_instructions}\n\n")
-
-    if AI_MOODS_FEATURE:
-        if AI_EMOTION_DETECTION_FEATURE:
-            adjust_emotional_state_analysis(detected_emotion)
-        print(emotional_states[current_emotion_index])
-        print(mood_instructions)
-        full_prompt += ("The user seems to be feeling "
-                        f"{detected_emotion} with a confidence of {emotion_confidence:.2f}. \n"
-                        "Please respond in a way that reflects this mood.\n\n")
-
-    if AI_WIKIPEDIA_FEATURE:
-        try:
-            if prompt.lower().startswith(f"@{BOT_TWITCH_NAME.lower()}"):
-                prompt = prompt[len(BOT_TWITCH_NAME) + 1:].strip()
-            elif prompt.lower().startswith(BOT_NICKNAME.lower()):
-                prompt = prompt[len(BOT_NICKNAME):].strip()
-
-            wiki_summary = await fetch_information(prompt)
-
-            if wiki_summary:
-                full_prompt += (
-                    "Additionally, here is some related factual "
-                    "information from Wikipedia to consider in your response:\n"
-                    f"{wiki_summary}\n\n"
-                )
-
-        except Exception as e:
-            logging.error(f"Error in query processing: {e}")
-            return "Sorry, I'm having trouble with the AI service right now."
-
-        logging.info("Full prompt: " + full_prompt)
-
-    full_prompt += "\n\nKeep all forumlated responses under 500 characters."
-
-    response = chat_session.send_message(full_prompt)
-    generated_text = response.text.strip()
-
-    if AI_LEARNING_FEATURE:
-        add_feedback_user_id(user_id)
-
-    if AI_MEMORY_FEATURE:
-        user_memory.append({'prompt': prompt, 'response': generated_text})
-        await save_cached_memory(user_id, user_memory)
-
-    message_count = 0
-
-    return generated_text
-
+# Removed query_gemini_with_memory function
 
 """
 --------------------------------------------------------------------------------
@@ -1083,10 +826,10 @@ async def event_message(message):
         logging.debug(f"Processed prompt: {prompt}")
 
         try:
-            response = await query_gemini_with_memory(user_id, prompt)
-            logging.info(f"Generated response from Gemini: {response}")
+            response = await query_openai_assistant(user_id, prompt) # MODIFIED
+            logging.info(f"Generated response from OpenAI Assistant: {response}") # MODIFIED
         except Exception as e:
-            logging.error(f"Error processing message from Gemini: {e}")
+            logging.error(f"Error processing message from OpenAI Assistant: {e}") # MODIFIED
 
         clean_response = emoji.replace_emoji(response, replace='')
         await message.channel.send(response)
@@ -1113,8 +856,8 @@ async def event_message(message):
         logging.debug(f"Processed prompt: {prompt}")
 
         try:
-            response = await query_gemini_with_memory(user_id, prompt)
-            logging.info(f"Generated response from Gemini: {response}")
+            response = await query_openai_assistant(user_id, prompt) # MODIFIED
+            logging.info(f"Generated response from OpenAI Assistant: {response}") # MODIFIED
 
             await message.channel.send(response)
 
@@ -1129,7 +872,7 @@ async def event_message(message):
 
             logging.info(f"Sent response: {response}")
         except Exception as e:
-            logging.error(f"Error processing message from Gemini: {e}")
+            logging.error(f"Error processing message from OpenAI Assistant: {e}") # MODIFIED
     else:
         logging.debug(f"Ignoring message: {message.content}")
 
@@ -1156,6 +899,8 @@ async def event_ready():
         logging.error(f"Error sending confirmation message: {e}")
 
     bot.loop.create_task(automated_response())
+    bot.loop.create_task(upload_long_term_memory_periodically()) # Added
+    logging.info("Started periodic long-term memory upload task.") # Added
 
 
 """
@@ -1178,23 +923,13 @@ def cleanup_memory():
 
 
 async def automated_response():
-    global message_count, current_emotion_index
+    global message_count # current_emotion_index removed
 
     while True:
         wait_time = random.randint(*AUTOMATED_RESPONSE_TIME_RANGE)
         await asyncio.sleep(wait_time)
         cleanup_memory()
-        if AI_MOODS_FEATURE:
-            if random.randint(0, 2) == 0:
-                current_emotion_index = 9
-                logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
-            elif random.randint(0, 2) == 0:
-                current_emotion_index = 8
-                logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
-            elif random.randint(0, 2) == 0:
-                random_emotion = random.randint(0, 7)
-                current_emotion_index = random_emotion
-                logging.info(f"Emotion changed to {get_emotional_state(current_emotion_index)}")
+        # Removed AI_MOODS_FEATURE block related to random emotion changes
         if message_count >= 10:
             try:
                 channel = bot.get_channel(TWITCH_CHANNEL_NAME)
@@ -1249,12 +984,7 @@ if AI_LEARNING_FEATURE:
             update_parameters_based_on_feedback()
 
 
-@ bot.command(name='Wikipedia')
-async def wikipedia_flag(ctx):
-    global AI_WIKIPEDIA_FEATURE
-    if ctx.author.name in AUTHORIZED_USERS_LIST:
-        AI_WIKIPEDIA_FEATURE = not AI_WIKIPEDIA_FEATURE
-
+# Removed !Wikipedia command
 
 @ bot.command(name='TTS')
 async def TTS_flag(ctx):
@@ -1270,26 +1000,11 @@ async def STT_flag(ctx):
         AI_STT_FEATURE = not AI_STT_FEATURE
 
 
-@ bot.command(name='Memory')
-async def memory_flag(ctx):
-    global AI_MEMORY_FEATURE
-    if ctx.author.name in AUTHORIZED_USERS_LIST:
-        AI_MEMORY_FEATURE = not AI_MEMORY_FEATURE
+# Removed !Memory command
 
 
-@ bot.command(name='Moods')
-async def moods_flag(ctx):
-    global AI_MOODS_FEATURE
-    if ctx.author.name in AUTHORIZED_USERS_LIST:
-        AI_MOODS_FEATURE = not AI_MOODS_FEATURE
-
-
-@ bot.command(name='Detection')
-async def emotion_detection_flag(ctx):
-    global AI_EMOTION_DETECTION_FEATURE
-    if ctx.author.name in AUTHORIZED_USERS_LIST:
-        AI_EMOTION_DETECTION_FEATURE = not AI_EMOTION_DETECTION_FEATURE
-
+# Removed !Moods command
+# Removed !Detection command
 
 @ bot.command(name='Learning')
 async def learning_flag(ctx):
